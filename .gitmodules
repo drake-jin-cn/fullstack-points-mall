@@ -19,3 +19,6 @@
 [submodule "points-mall-bff"]
 	path = points-mall-bff
 	url = git@github.com:drake-jin-cn/points-mall-bff.git
+[submodule "points-mall-frontend-base"]
+	path = points-mall-frontend-base
+	url = git@github.com:drake-jin-cn/points-mall-frontend-base.git
