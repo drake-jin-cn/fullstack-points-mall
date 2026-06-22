@@ -1,0 +1,24 @@
+{
+  "version": "1",
+  "name": "Points Mall API Tests",
+  "environments": {
+    "local": {
+      "bffBaseUrl": "http://localhost:3000",
+      "coreBaseUrl": "http://localhost:8080",
+      "shopBaseUrl": "http://localhost:8000",
+      "messageBaseUrl": "http://localhost:3001",
+      "thirdpartyBaseUrl": "http://localhost:3002",
+      "dataBaseUrl": "http://localhost:8001",
+      "frontendBaseUrl": "http://localhost:3003"
+    },
+    "staging": {
+      "bffBaseUrl": "https://staging-bff.your-domain.com",
+      "coreBaseUrl": "https://staging-core.your-domain.com",
+      "shopBaseUrl": "https://staging-shop.your-domain.com",
+      "messageBaseUrl": "https://staging-message.your-domain.com",
+      "thirdpartyBaseUrl": "https://staging-thirdparty.your-domain.com",
+      "dataBaseUrl": "https://staging-data.your-domain.com",
+      "frontendBaseUrl": "https://staging.your-domain.com"
+    }
+  }
+}

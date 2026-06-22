@@ -142,6 +142,43 @@ Step 11  Run `pnpm run test:task TASK-XXX --update-status`
 Step 12  ⚠️ After deployment, human manually updates status to closed
 ```
 
+### Mid-Task Spec Amendment Process
+
+Applies when a **technology or design decision changes after `in-dev` has started** but before
+`dev-done`. This is distinct from a post-merge Spec change (which triggers the cascade detection
+described in the Spec-to-Code Consistency Mechanism). Examples: switching a framework, changing a port, replacing a library.
+
+```
+Issue is identified (by any party):
+  ├─ AI self-identifies a Spec inconsistency mid-implementation
+  ├─ Human raises a change request during development
+  └─ Reviewer raises a Spec issue during PR review
+    ↓
+⚠️  Code is reverted FIRST — before any Spec discussion begins:
+  - AI finds it   → AI reverts immediately, then reports to Human
+  - Reviewer finds it → requests developer to revert;
+                        further development is blocked until revert is confirmed
+    ↓
+AI updates the [Spec] section in the task file:
+  - Edit the affected technical decision
+  - Add a ⚠️ amendment notice at the top of the Spec section with: date / what changed / why
+    ↓
+Human reviews the updated Spec → confirms or rejects
+  ├─ Rejected → restore original Spec, resume from Step 6 with original Spec
+  └─ Confirmed → AI re-implements based on updated Spec
+    ↓
+AI appends a record to Status Change History:
+  | <date> | in-dev | in-dev | Human | Spec amended: <summary of change> |
+    ↓
+Continue from Step 6 with updated Spec as the source of truth
+```
+
+**Key rules:**
+- **Revert first.** Code must be reverted before Spec discussion begins — this prevents the Spec
+  from being unconsciously pulled toward code that already exists.
+- **Spec is always the source of truth.** Code is never the source of truth, even temporarily.
+  The amendment must be recorded in the task file before any new code is written.
+
 ### AI Git Commit Convention
 
 ```
