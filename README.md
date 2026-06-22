@@ -108,22 +108,35 @@ Employees earn points automatically through daily attendance check-ins, birthday
 ## Local Development
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/your-username/fullstack-points-mall.git
+# 1. Clone the repo with all submodules
+git clone --recurse-submodules https://github.com/your-username/fullstack-points-mall.git
 cd fullstack-points-mall
 
-# 2. Copy and configure environment variables
+# 2. Install dependencies and set up Git hooks
+#    This installs @usebruno/cli + husky, then automatically runs hooks:install
+#    which copies the commit-msg hook into the root repo AND all 8 submodule repos.
+pnpm install
+
+# 3. Copy and configure environment variables
 cp .env.example .env
 # Edit .env with your actual keys (DB password, Redis URL, third-party API keys)
 
-# 3. Start all services with Docker Compose
+# 4. Start all services with Docker Compose
 docker-compose up -d
 
 # Services available at:
 #   Frontend:  http://localhost:3000
-#   BFF API:   http://localhost:4000
+#   BFF API:   http://localhost:4000 (NestJS)
 #   Swagger:   http://localhost:4000/api-docs
 ```
+
+> **Git hooks** are installed automatically by `pnpm install` (via the `prepare` lifecycle script).
+> Every commit in this repo and all submodules must follow the format:
+> `<type>(<scope>): <summary>` — e.g. `feat(TASK-AUTH-0001): implement JWT login`.
+> Commits that don't match this format will be rejected locally before reaching GitHub.
+
+> **If you cloned without `--recurse-submodules`**, run:
+> `git submodule update --init --recursive && pnpm install`
 
 ---
 

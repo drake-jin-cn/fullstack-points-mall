@@ -19,14 +19,23 @@ plain-text `.bru` format, which is Git-friendly and supports CLI execution.
 ## Run Commands
 
 ```bash
-# Install Bruno CLI (first time)
-npm install -g @usebruno/cli
+# Run tests for a specific task (recommended — uses project-local bru)
+pnpm run test:task TASK-INFRA-0001
 
-# Run entire collection (local environment)
-bru run .tests/api/bff/ --env local
+# Run tests and auto-update task status
+pnpm run test:task TASK-INFRA-0001 --update-status
 
-# CI output format
-bru run .tests/api/bff/ --env local --reporter junit --output test-results/api.xml
+# Run all dev-done tasks
+pnpm run test:task --status=dev-done --update-status
+
+# Run Bruno directly against a service collection (project-local bru)
+pnpm exec bru run .tests/api/bff/ --env local
+
+# Run a single .bru file
+pnpm exec bru run .tests/api/bff/health/health.bru --env local
+
+# CI output format (JUnit XML)
+pnpm exec bru run .tests/api/bff/ --env local --reporter junit --output test-results/api.xml
 ```
 
 ## .bru File Format
@@ -64,17 +73,26 @@ assert {
 
 ```json
 {
+  "version": "1",
+  "name": "Points Mall API Tests",
   "environments": {
     "local": {
-      "baseUrl": "http://localhost:3100",
-      "testEmail": "test@company.com",
-      "testPassword": "Test123456"
+      "bffBaseUrl": "http://localhost:4000",
+      "coreBaseUrl": "http://localhost:8080",
+      "shopBaseUrl": "http://localhost:8081",
+      "messageBaseUrl": "http://localhost:8082",
+      "thirdpartyBaseUrl": "http://localhost:8084",
+      "dataBaseUrl": "http://localhost:8083",
+      "frontendBaseUrl": "http://localhost:3000"
     },
     "staging": {
-      "baseUrl": "https://staging-api.your-domain.com"
-    },
-    "production": {
-      "baseUrl": "https://api.your-domain.com"
+      "bffBaseUrl": "https://staging-bff.your-domain.com",
+      "coreBaseUrl": "https://staging-core.your-domain.com",
+      "shopBaseUrl": "https://staging-shop.your-domain.com",
+      "messageBaseUrl": "https://staging-message.your-domain.com",
+      "thirdpartyBaseUrl": "https://staging-thirdparty.your-domain.com",
+      "dataBaseUrl": "https://staging-data.your-domain.com",
+      "frontendBaseUrl": "https://staging.your-domain.com"
     }
   }
 }

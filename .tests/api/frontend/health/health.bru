@@ -1,0 +1,16 @@
+meta {
+  name: Frontend health check (Next.js API route)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{frontendBaseUrl}}/api/health
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.status: eq ok
+}
