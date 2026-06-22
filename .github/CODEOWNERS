@@ -1,0 +1,24 @@
+# CODEOWNERS
+#
+# Rules:
+#   - Format: <path pattern>  <GitHub username or team>
+#   - When a PR is created, GitHub automatically requests reviews from matching owners
+#   - When used with Branch Protection "Require review from Code Owners",
+#     these owners must approve before the PR can be merged
+#   - Note: a file owner cannot review their own PRs
+#
+# In this project each task is owned end-to-end by one person; code ownership is not
+# split by service. CODEOWNERS is used only to protect high-risk files such as
+# requirement specs, task files, and workflow config.
+# Before use: replace the placeholder usernames below with actual GitHub usernames.
+# ─────────────────────────────────────────────────────────────
+
+# ── Spec files (highest-priority — must be approved by tech-lead) ──────────────
+.wiki/                          @tech-lead-username
+WORKFLOW.md                     @tech-lead-username
+
+# ── Task files (trackable by product owner / tech-lead) ───────────────────────
+.tasks/                         @tech-lead-username
+
+# ── GitHub config itself (prevent bypassing constraints) ──────────────────────
+.github/                        @tech-lead-username
