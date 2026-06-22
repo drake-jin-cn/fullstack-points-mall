@@ -1,10 +1,10 @@
-# 员工积分商城 — 同步开发任务清单
+# Employee Points Mall — Synchronized Development Task List
 
-> **同步原则：** 每个阶段结束时，所有服务的完成度应处于同一水平。不允许一个服务已全部完成，另一个服务框架还没搭起来。
+> **Sync Principle:** At the end of each phase, all services must be at the same level of completion. It is not allowed for one service to be fully finished while another hasn't been scaffolded yet.
 >
-> **节奏建议：** 每个任务大约 2–4 小时，大型任务（🔴）可跨两个开发日。完成后勾选。
+> **Pace Guide:** Each task takes roughly 2–4 hours; large tasks (🔴) may span two development days. Check off tasks when done.
 >
-> **图例：** 🟢 小任务（<2h）· 🟡 中任务（2–4h）· 🔴 大任务（4–6h）
+> **Legend:** 🟢 Small (<2h) · 🟡 Medium (2–4h) · 🔴 Large (4–6h)
 
 ---
 
@@ -24,9 +24,18 @@
 
 ---
 
-## Phase 0 — Project Scaffolding (T001–T005)
+## Phase 0 — Project Scaffolding (T001–T005 + INFRA)
 
 **Goal:** All 8 services have a runnable skeleton. Shared infrastructure (DB, Redis, MQ) is defined. Team can `docker-compose up` and see all services respond.
+
+> **INFRA tasks** are tracked in `.tasks/TASK-INFRA-XXXX.md` and managed via `pnpm run tasks:*` scripts.
+> They run in parallel with T-series tasks and do not block feature development.
+
+- [x] **TASK-INFRA-0001** 🟡 `[all services]` Initialize all 8 service skeletons and verify `GET /health → 200 OK`. Status: `dev-done`.
+
+- [ ] **TASK-INFRA-0002** 🟡 `[root]` Build project toolchain: root `package.json` + pnpm workspace, `tasks:sync` / `test:task` / `tasks:list` / `tasks:view` scripts, Bruno CLI, Husky `commit-msg` hook installed on root + all 8 submodule repos. Status: `spec-pending`.
+
+- [ ] **TASK-INFRA-0003** 🟢 `[root]` GitHub collaboration infrastructure: `.github/CODEOWNERS`, `.github/pull_request_template.md` (requires linked TASK ID), `.github/workflows/ci.yml` stub (lint + type-check + test per service), `.github/workflows/deploy.yml` stub (build + push Docker image). CI gates PR merge. Status: `not started`.
 
 - [ ] **T001** 🟡 `[all services]` Initialize all repo skeletons with correct framework boilerplate: NestJS (bff), Spring Boot (core), Laravel (shop), Express/TS (message, thirdparty), FastAPI (data), Next.js (frontend), Rollup/React (frontend-base). Each service must start without errors and return a `GET /health → 200 OK`.
 

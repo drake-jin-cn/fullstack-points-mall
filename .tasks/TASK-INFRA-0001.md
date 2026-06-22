@@ -1,7 +1,7 @@
 ---
 id: TASK-INFRA-0001
 title: "Initialize all repo skeletons with framework boilerplate"
-status: dev-done
+status: test-pass
 priority: medium
 services:
   - bff
@@ -76,7 +76,6 @@ code_files:
   - points-mall-frontend-base/src/index.ts
   - points-mall-frontend-base/src/components/Button.tsx
 test_refs:
-  - .tests/api/bruno.json
   - .tests/api/bff/health/health.bru
   - .tests/api/core/health/health.bru
   - .tests/api/shop/health/health.bru
@@ -231,6 +230,7 @@ HTTP `200 OK`, `Content-Type: application/json`.
 
 | Time | Previous Status | New Status | Actor | Notes |
 |------|-----------------|------------|-------|-------|
+| 2026-06-22 | dev-done | test-pass | script | test:task run |
 | 2026-06-22 | — | draft | AI | Raw requirements converted to structured TASK |
 | 2026-06-22 | draft | spec-pending | AI | Spec generated from raw requirements; awaiting human review |
 | 2026-06-22 | spec-pending | spec-ready | Human | approve |

@@ -107,13 +107,20 @@ function runVitest(testFiles) {
 
 function runBruno(bruFiles) {
   console.log('\n🌐  Running Bruno API tests...');
-  // Group by collection directory
-  const dirs = [...new Set(bruFiles.map(f => path.dirname(path.join(ROOT, f))))];
+  // Bruno CLI must run from the collection root (where bruno.json lives).
+  // Collection root is .tests/api/; file paths in test_refs are relative to
+  // the repo root, so we strip the ".tests/api/" prefix to get the collection-
+  // relative path.
+  const COLLECTION_ROOT = path.join(ROOT, '.tests', 'api');
+  const bruBin = path.join(ROOT, 'node_modules', '.bin', 'bru');
+
   let allPass = true;
-  for (const dir of dirs) {
+  for (const ref of bruFiles) {
+    const absPath = path.isAbsolute(ref) ? ref : path.join(ROOT, ref);
+    const relToCollection = path.relative(COLLECTION_ROOT, absPath);
     const result = spawnSync(
-      'npx', ['@usebruno/cli', 'run', dir, '--env', 'local'],
-      { stdio: 'inherit', cwd: ROOT }
+      bruBin, ['run', relToCollection, '--env', 'local'],
+      { stdio: 'inherit', cwd: COLLECTION_ROOT }
     );
     if (result.status !== 0) allPass = false;
   }

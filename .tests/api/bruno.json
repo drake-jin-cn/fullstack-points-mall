@@ -7,7 +7,7 @@
       "coreBaseUrl": "http://localhost:8080",
       "shopBaseUrl": "http://localhost:8000",
       "messageBaseUrl": "http://localhost:3001",
-      "thirdpartyBaseUrl": "http://localhost:3002",
+      "thirdpartyBaseUrl": "http://localhost:8082",
       "dataBaseUrl": "http://localhost:8001",
       "frontendBaseUrl": "http://localhost:3003"
     },

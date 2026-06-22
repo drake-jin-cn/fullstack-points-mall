@@ -1,0 +1,23 @@
+{
+  "name": "fullstack-points-mall",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Employee Points Mall — monorepo root",
+  "scripts": {
+    "tasks:list": "node .tests/scripts/tasks-sync.js --list",
+    "tasks:sync": "node .tests/scripts/tasks-sync.js",
+    "tasks:view": "node .tests/scripts/tasks-sync.js --view",
+    "test:task": "node .tests/scripts/run-task-tests.js",
+    "check:spec-api": "echo 'check:spec-api not yet implemented' && exit 0",
+    "hooks:install": "node .git-hooks/install.js",
+    "prepare": "node .git-hooks/install.js"
+  },
+  "devDependencies": {
+    "@usebruno/cli": "^2.0.0",
+    "husky": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
