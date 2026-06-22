@@ -1,0 +1,24 @@
+[submodule "points-mall-frontend"]
+	path = points-mall-frontend
+	url = git@github.com:drake-jin-cn/points-mall-frontend.git
+[submodule "points-mall-data"]
+	path = points-mall-data
+	url = git@github.com:drake-jin-cn/points-mall-data.git
+[submodule "points-mall-message"]
+	path = points-mall-message
+	url = git@github.com:drake-jin-cn/points-mall-message.git
+[submodule "points-mall-shop"]
+	path = points-mall-shop
+	url = git@github.com:drake-jin-cn/points-mall-shop.git
+[submodule "points-mall-core"]
+	path = points-mall-core
+	url = git@github.com:drake-jin-cn/points-mall-core.git
+[submodule "points-mall-thirdparty-connector"]
+	path = points-mall-thirdparty-connector
+	url = git@github.com:drake-jin-cn/points-mall-thirdparty-connector.git
+[submodule "points-mall-bff"]
+	path = points-mall-bff
+	url = git@github.com:drake-jin-cn/points-mall-bff.git
+[submodule "points-mall-frontend-base"]
+	path = points-mall-frontend-base
+	url = git@github.com:drake-jin-cn/points-mall-frontend-base.git
