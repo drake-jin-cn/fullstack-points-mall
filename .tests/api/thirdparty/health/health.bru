@@ -13,4 +13,8 @@ get {
 assert {
   res.status: eq 200
   res.body.status: eq ok
+  res.body.service: eq points-mall-thirdparty-connector
+  res.body.db: eq ok
+  res.body.timestamp: isDefined
+  res.body.uptime: isDefined
 }
