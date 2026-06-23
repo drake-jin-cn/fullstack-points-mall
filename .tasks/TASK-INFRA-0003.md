@@ -1,7 +1,7 @@
 ---
 id: TASK-INFRA-0003
 title: "Multi-environment config setup for all 8 services"
-status: dev-done
+status: test-pass
 priority: high
 services:
   - bff
@@ -181,3 +181,4 @@ environment parity and makes secrets management risky.
 | 2026-06-23 | — | draft | AI | Raw requirements converted to structured TASK |
 | 2026-06-23 | draft | in-dev | AI | Spec confirmed, starting implementation |
 | 2026-06-23 | in-dev | dev-done | AI | All 8 services have .env.example + profiles; env loading wired; no secrets in source |
+| 2026-06-23 | dev-done | test-pass | AI | Static review: all 10 ACs checked, all code files confirmed present; no test_refs |
