@@ -427,12 +427,15 @@ pnpm run check:spec-api
 
 | Environment | Description | Trigger |
 |-------------|-------------|---------|
-| `local` | Local development — all services run locally | `pnpm dev` |
-| `staging` | Test environment — CI auto-deploys | PR merged to `dev` branch |
-| `production` | Production environment | Merged to `main` branch, then manually triggered |
+| `dev` | Local development — all services run locally | `pnpm dev` |
+| `test` | Test environment — CI auto-deploys | PR merged to `dev` branch |
+| `prod` | Production environment | Merged to `main` branch, then manually triggered |
 
-Environment variable files for each service live in the service root: `.env.local`, `.env.staging`, `.env.production`.  
+Environment variable files for each service live in the service root: `.env.dev`, `.env.test`, `.env.prod`.  
 **Committing any `.env.*` file to Git is prohibited** (already excluded in `.gitignore`).
+
+> **Note:** Bruno API test environments use a separate naming convention (`local` / `staging`) that
+> maps to deployment targets, not application profiles. These are two independent dimensions.
 
 ---
 

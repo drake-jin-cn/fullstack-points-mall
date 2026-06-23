@@ -8,7 +8,6 @@ node_modules/
 # Environment files — never commit secrets
 .env
 .env.local
-.env.staging
 .env.production
 .env.docker
 .env.*.local
