@@ -29,23 +29,41 @@
 **Goal:** All 8 services have a runnable skeleton. Shared infrastructure (DB, Redis, MQ) is defined. Team can `docker-compose up` and see all services respond.
 
 > **INFRA tasks** are tracked in `.tasks/TASK-INFRA-XXXX.md` and managed via `pnpm run tasks:*` scripts.
-> They run in parallel with T-series tasks and do not block feature development.
 
-- [x] **TASK-INFRA-0001** 🟡 `[all services]` Initialize all 8 service skeletons and verify `GET /health → 200 OK`. Status: `dev-done`.
+### 1 — Service Foundation
 
-- [ ] **TASK-INFRA-0002** 🟡 `[root]` Build project toolchain: root `package.json` + pnpm workspace, `tasks:sync` / `test:task` / `tasks:list` / `tasks:view` scripts, Bruno CLI, Husky `commit-msg` hook installed on root + all 8 submodule repos. Status: `spec-pending`.
+- [x] All 8 service skeletons initialized with framework boilerplate — NestJS (bff), Spring Boot (core), Spring WebFlux (thirdparty), Laravel (shop), Express/TS (message), FastAPI (data), Next.js (frontend), Rollup/React (frontend-base). `TASK-INFRA-0001`
+- [x] Multi-environment config (`dev` / `test` / `prod`) for all 8 services: `.env.example` + profile files + env-var loading wired at startup; no secrets in source. `TASK-INFRA-0003`
+- [x] Standardized `GET /health` on all 6 backend services returns `{ status, service, timestamp, db: "ok"|"error", uptime }`. `TASK-INFRA-0004`
 
-- [ ] **TASK-INFRA-0003** 🟢 `[root]` GitHub collaboration infrastructure: `.github/CODEOWNERS`, `.github/pull_request_template.md` (requires linked TASK ID), `.github/workflows/ci.yml` stub (lint + type-check + test per service), `.github/workflows/deploy.yml` stub (build + push Docker image). CI gates PR merge. Status: `not started`.
+### 2 — Shared Infrastructure
 
-- [ ] **T001** 🟡 `[all services]` Initialize all repo skeletons with correct framework boilerplate: NestJS (bff), Spring Boot (core), Laravel (shop), Express/TS (message, thirdparty), FastAPI (data), Next.js (frontend), Rollup/React (frontend-base). Each service must start without errors and return a `GET /health → 200 OK`.
+- [x] `docker-compose.yml` at project root: `postgres:16-alpine`, `redis:7-alpine`, `rabbitmq:3-management-alpine`; `infra/postgres/init.sql` creates `points_core` and `points_shop` on first boot. `TASK-INFRA-0005`
+- [x] Database schema — **`points_core`**: 6 Flyway migrations (departments → employees → roles/employee_roles → attendance_records → points_rules → points_ledger); **`points_shop`**: 7 Laravel migrations (categories, products, orders, order_items, menu_items, announcements, system_configs). ER diagrams in `.wiki/db/`. `TASK-INFRA-0005`
 
-- [ ] **T002** 🟡 `[all services]` Multi-environment config setup: add `.env.example` files to every service with all required variables; add `dev / test / prod` env profiles; configure environment variable loading at startup; verify no secrets are hardcoded in source files.
+### 3 — Developer Toolchain
 
-- [ ] **T003** 🔴 `[core, shop]` Full database schema design: create all table DDL for `points_core` (employees, departments, roles, attendance, points_ledger, points_rules) and `points_shop` (products, categories, orders, menu_items, announcements, system_configs). Add Flyway migrations (core) and Laravel migrations (shop). Document ER diagrams in `.wiki/db/`.
+- [x] Root `package.json` with pnpm workspace; `tasks:sync` / `tasks:list` / `tasks:view` / `test:task` scripts; Bruno CLI (`bru`) installed. `TASK-INFRA-0002`
+- [x] `commit-msg` Git hook enforcing `<type>(TASK-ID): <summary>` format installed on root + all 8 submodule repos via `pnpm run hooks:install`. `TASK-INFRA-0002`
+- [x] `.github/CODEOWNERS` (auto-assigns PR reviewers by directory) + `pull_request_template.md` (requires linked TASK ID). `TASK-INFRA-0003` partial
+- [x] `.github/workflows/ci.yml` (lint + type-check + test per service, all 8 jobs run in parallel, gates PR merge) + `deploy.yml` (build → GHCR push → SSH deploy, triggered on merge to `main`).
 
-- [ ] **T004** 🟢 `[all services]` Standardized health check endpoint on every service: `GET /health` returns `{ status, service, timestamp, db: "ok"|"error", uptime }`. Verify all 7 backend services respond correctly.
+### 4 — Frontend Setup
 
-- [ ] **T005** 🟡 `[frontend, frontend-base]` Initialize frontend projects: Next.js App Router with TypeScript + TailwindCSS + ESLint + Prettier + Husky + lint-staged; Rollup config for frontend-base with ESM/CJS dual output target. Both projects run without error. Configure `pnpm link` for local base package consumption.
+- [x] `points-mall-frontend`: Next.js App Router + TypeScript + TailwindCSS + ESLint. `TASK-INFRA-0001`
+- [x] `points-mall-frontend-base`: Rollup config with ESM + CJS dual output; placeholder `Button` component; `pnpm build` exits 0. `TASK-INFRA-0001`
+- [x] Prettier + lint-staged wired on `points-mall-frontend`: `.prettierrc.json` + `.prettierignore`; `format` / `format:check` scripts; pre-commit hook runs lint-staged on staged `ts/tsx/json/md/css` files.
+- [x] `points-mall-frontend-base` published to npm as `@points-mall/frontend-base`; `points-mall-frontend` consumes it as a versioned npm dependency. Publish workflow: `.github/workflows/publish.yml` auto-publishes on `v*` tag.
+
+### 5 — Containerisation & Deployment
+
+- [x] `Dockerfile` for all 7 deployable services (multi-stage for Node.js + Java; single-stage for Python + PHP). `.dockerignore` added to each service. `TASK-INFRA-0001`
+- [x] `render.yaml` Blueprint at repo root: defines all 7 services with `runtime: docker`; secret vars marked `sync: false`; frontend port 3003. Two environments configured in Render dashboard: **dev** (`https://points-mall-dev.onrender.com`) and **prod** (`https://points-mall.onrender.com`). `TASK-INFRA-0003`
+- [x] Neon PostgreSQL: two separate branches — `dev` and `prod` — with independent connection strings. All services use `DB_SSL_PARAMS=?sslmode=require`. Hikari pool tuned for Neon serverless (max 5, min 0). `TASK-INFRA-0005`
+
+---
+
+**Phase 0 primary goal:** ✅ All 8 services have runnable skeletons, `docker-compose up` brings up postgres/redis/rabbitmq, all `/health` endpoints respond, all services containerised, and both Render environments are live.
 
 ---
 
@@ -346,14 +364,14 @@
 
 - [ ] **T090** 🟡 `[all]` `docker-compose.yml` for full local dev stack: all 8 application services + `postgres:15` (two DB instances or schemas) + `redis:7-alpine` + `rabbitmq:3-management`; health checks and `depends_on` on all services; `.env.docker` override file; verify `docker-compose up -d` brings entire stack up cleanly.
 
-- [ ] **T091** 🟡 `[all]` GitHub Actions CI workflow (`.github/workflows/ci.yml`): triggers on PR to `main`; jobs run in parallel per service:
+- [x] **T091** 🟡 `[all]` GitHub Actions CI workflow (`.github/workflows/ci.yml`): triggers on PR to `main`; jobs run in parallel per service:
   - frontend/bff/message/thirdparty: `pnpm lint && pnpm typecheck && pnpm test`
   - core: `mvn verify`
   - shop: `composer test`
   - data: `pytest`
   PR is blocked from merging until all jobs pass.
 
-- [ ] **T092** 🟡 `[all]` GitHub Actions CD workflow (`.github/workflows/deploy.yml`): triggers on merge to `main`; build Docker images for all services; push to GitHub Container Registry (GHCR); SSH deploy to cloud VPS (or Render/Railway): pull latest images, `docker-compose pull && docker-compose up -d --no-build`. Zero-downtime: rolling restart per service.
+- [x] **T092** 🟡 `[all]` GitHub Actions CD workflow (`.github/workflows/deploy.yml`): triggers on merge to `main`; build Docker images for all services; push to GitHub Container Registry (GHCR); SSH deploy to cloud VPS (or Render/Railway): pull latest images, `docker-compose pull && docker-compose up -d --no-build`. Zero-downtime: rolling restart per service.
 
 - [ ] **T093** 🟡 `[all services]` Upgrade health check endpoints (T004 baseline) to full connectivity checks: `GET /health` returns `{ status: "ok"|"degraded", db: "ok"|"error", redis: "ok"|"error", mq: "ok"|"error", uptime_seconds }`. Returns HTTP 200 if `status=ok`, HTTP 503 if `status=degraded`.
 

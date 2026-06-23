@@ -14,7 +14,8 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const HOOK_SRC = path.join(__dirname, 'commit-msg');
+const HOOKS_SRC_DIR = __dirname;
+const HOOKS_TO_INSTALL = ['commit-msg', 'pre-commit'];
 const GITMODULES = path.join(ROOT, '.gitmodules');
 
 // ─── parse .gitmodules ────────────────────────────────────────────────────────
@@ -58,26 +59,30 @@ function installHook(repoRoot, label) {
     fs.mkdirSync(hooksDir, { recursive: true });
   }
 
-  const dest = path.join(hooksDir, 'commit-msg');
-  fs.copyFileSync(HOOK_SRC, dest);
-
-  // chmod +x (no-op on Windows but harmless)
-  try {
-    fs.chmodSync(dest, 0o755);
-  } catch {
-    // ignore on platforms that don't support chmod
+  let installed = 0;
+  for (const hookName of HOOKS_TO_INSTALL) {
+    const src = path.join(HOOKS_SRC_DIR, hookName);
+    if (!fs.existsSync(src)) continue; // skip hooks not yet created
+    const dest = path.join(hooksDir, hookName);
+    fs.copyFileSync(src, dest);
+    try { fs.chmodSync(dest, 0o755); } catch { /* ignore on Windows */ }
+    installed++;
   }
 
-  console.log(`  ✓ ${label}`);
+  console.log(`  ✓ ${label} (${installed} hook(s))`);
   return true;
 }
 
 // ─── main ─────────────────────────────────────────────────────────────────────
-console.log('\nInstalling commit-msg hook...\n');
+console.log('\nInstalling git hooks (commit-msg, pre-commit)...\n');
 
-if (!fs.existsSync(HOOK_SRC)) {
-  console.error(`✗ Hook source not found: ${HOOK_SRC}`);
+const missingHooks = HOOKS_TO_INSTALL.filter(h => !fs.existsSync(path.join(HOOKS_SRC_DIR, h)));
+if (missingHooks.length === HOOKS_TO_INSTALL.length) {
+  console.error(`✗ No hook source files found in ${HOOKS_SRC_DIR}`);
   process.exit(1);
+}
+if (missingHooks.length > 0) {
+  console.warn(`  ⚠ Some hooks not found and will be skipped: ${missingHooks.join(', ')}`);
 }
 
 let successCount = 0;

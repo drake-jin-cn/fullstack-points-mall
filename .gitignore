@@ -8,10 +8,20 @@ node_modules/
 # Environment files — never commit secrets
 .env
 .env.local
-.env.staging
 .env.production
 .env.docker
 .env.*.local
+
+# Per-service env profile files (template .env.example files ARE committed)
+.env.dev
+.env.test
+.env.prod
+.env.development
+# Next.js specific
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
 
 # Build outputs
 dist/

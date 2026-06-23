@@ -1,0 +1,140 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel in-flight runs for the same PR / branch
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── TypeScript services (bff, message, frontend, frontend-base) ─────────────
+  bff:
+    name: BFF (NestJS)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: points-mall-bff
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm build
+
+  message:
+    name: Message (Express/TS)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: points-mall-message
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+
+  frontend-base:
+    name: Frontend Base (Rollup/React)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: points-mall-frontend-base
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+  frontend:
+    name: Frontend (Next.js)
+    runs-on: ubuntu-latest
+    needs: frontend-base
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter points-mall-frontend-base build
+      - run: pnpm --filter points-mall-frontend lint
+      - run: pnpm --filter points-mall-frontend format:check
+      - run: pnpm --filter points-mall-frontend build
+
+  # ─── Java services (core, thirdparty) ───────────────────────────────────────
+  core:
+    name: Core (Spring Boot)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: points-mall-core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 25 }
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('points-mall-core/pom.xml') }}
+      - run: mvn --no-transfer-progress verify
+
+  thirdparty:
+    name: Thirdparty Connector (WebFlux)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: points-mall-thirdparty-connector
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 25 }
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('points-mall-thirdparty-connector/pom.xml') }}
+      - run: mvn --no-transfer-progress verify
+
+  # ─── PHP service (shop) ──────────────────────────────────────────────────────
+  shop:
+    name: Shop (Laravel)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: points-mall-shop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.5', tools: composer }
+      - run: composer install --no-interaction --prefer-dist
+      - run: php artisan test --parallel
+
+  # ─── Python service (data) ───────────────────────────────────────────────────
+  data:
+    name: Data (FastAPI)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: points-mall-data
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -r requirements.txt
+      - run: pytest --tb=short

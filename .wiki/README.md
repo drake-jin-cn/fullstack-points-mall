@@ -44,6 +44,7 @@
 
 | File | Task | Status | Description |
 |------|------|--------|-------------|
+| infra.md | TASK-INFRA-0002 | active | Developer toolchain, code quality, Git hooks, GitHub Actions CI |
 | auth.md | TASK-AUTH | draft | User authentication and authorization |
 | points.md | TASK-POINTS | draft | Points issuance and transaction management |
 | shop.md | TASK-SHOP | draft | Points mall, product management, and order flow |

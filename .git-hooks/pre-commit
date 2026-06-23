@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# pre-commit hook — runs formatters for each workspace that has staged files.
+#
+# Node services (lint-staged):
+#   points-mall-bff           — ESLint + Prettier
+#   points-mall-message       — Prettier
+#   points-mall-frontend-base — Prettier
+#   points-mall-frontend      — ESLint + Prettier
+#
+# Java services (Spotless via Maven):
+#   points-mall-core
+#   points-mall-thirdparty-connector
+#
+# PHP service (Laravel Pint):
+#   points-mall-shop
+#
+# Python service (Ruff):
+#   points-mall-data
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+has_staged() {
+  git diff --cached --name-only --diff-filter=ACMR | grep -q "^$1/"
+}
+
+# ─── Node services ────────────────────────────────────────────────────────────
+for svc in points-mall-bff points-mall-message points-mall-frontend-base points-mall-frontend; do
+  if has_staged "$svc"; then
+    echo "lint-staged: $svc"
+    cd "$ROOT/$svc" && npx lint-staged || exit 1
+    cd "$ROOT"
+  fi
+done
+
+# ─── Java: Spotless apply (auto-fix) then check ───────────────────────────────
+for svc in points-mall-core points-mall-thirdparty-connector; do
+  if has_staged "$svc"; then
+    echo "spotless: $svc"
+    cd "$ROOT/$svc"
+    mvn --no-transfer-progress spotless:apply -q || exit 1
+    # Re-stage files that Spotless modified
+    git diff --name-only | grep "\.java$" | xargs -I{} git add "$ROOT/$svc/{}" 2>/dev/null || true
+    cd "$ROOT"
+  fi
+done
+
+# ─── PHP: Laravel Pint (auto-fix) ─────────────────────────────────────────────
+if has_staged "points-mall-shop"; then
+  echo "pint: points-mall-shop"
+  cd "$ROOT/points-mall-shop"
+  # Run pint only on staged PHP files
+  STAGED_PHP=$(git diff --cached --name-only --diff-filter=ACMR | grep "^points-mall-shop/.*\.php$" | sed 's|^points-mall-shop/||')
+  if [ -n "$STAGED_PHP" ]; then
+    echo "$STAGED_PHP" | xargs ./vendor/bin/pint || exit 1
+    echo "$STAGED_PHP" | xargs git add 2>/dev/null || true
+  fi
+  cd "$ROOT"
+fi
+
+# ─── Python: Ruff format + check (auto-fix) ───────────────────────────────────
+if has_staged "points-mall-data"; then
+  echo "ruff: points-mall-data"
+  cd "$ROOT/points-mall-data"
+  STAGED_PY=$(git diff --cached --name-only --diff-filter=ACMR | grep "^points-mall-data/.*\.py$" | sed 's|^points-mall-data/||')
+  if [ -n "$STAGED_PY" ]; then
+    echo "$STAGED_PY" | xargs ruff format || exit 1
+    echo "$STAGED_PY" | xargs ruff check --fix || exit 1
+    echo "$STAGED_PY" | xargs git add 2>/dev/null || true
+  fi
+  cd "$ROOT"
+fi
+
+exit 0

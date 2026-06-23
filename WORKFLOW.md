@@ -427,12 +427,15 @@ pnpm run check:spec-api
 
 | Environment | Description | Trigger |
 |-------------|-------------|---------|
-| `local` | Local development — all services run locally | `pnpm dev` |
-| `staging` | Test environment — CI auto-deploys | PR merged to `dev` branch |
-| `production` | Production environment | Merged to `main` branch, then manually triggered |
+| `dev` | Local development — all services run locally | `pnpm dev` |
+| `test` | Test environment — CI auto-deploys | PR merged to `dev` branch |
+| `prod` | Production environment | Merged to `main` branch, then manually triggered |
 
-Environment variable files for each service live in the service root: `.env.local`, `.env.staging`, `.env.production`.  
+Environment variable files for each service live in the service root: `.env.dev`, `.env.test`, `.env.prod`.  
 **Committing any `.env.*` file to Git is prohibited** (already excluded in `.gitignore`).
+
+> **Note:** Bruno API test environments use a separate naming convention (`local` / `staging`) that
+> maps to deployment targets, not application profiles. These are two independent dimensions.
 
 ---
 
@@ -482,7 +485,7 @@ When a task enters `spec-pending` status, you may use any AI tool (Copilot, Curs
 
 After human review, extract the acceptance criteria (core items) into the task file's [Acceptance Criteria] section and update status to `spec-ready`. Development may then begin.
 
-Before submitting or merging the PR, the developer archives the [Spec] section contents to the corresponding file in `.wiki/features/`, fills in `wiki_refs`, and **deletes the [Spec] section from the task file**. Tools may change; this process does not.
+Before submitting or merging the PR, the developer archives the [Spec] section contents to the corresponding file in `.wiki/features/`, fills in `wiki_refs`, and **retains the [Spec] section in the task file as a historical record of the analysis and design process**. The Spec section serves a different purpose from the wiki: the wiki holds the current canonical spec; the task file's Spec holds the original requirements analysis, decision rationale, and out-of-scope boundaries. Tools may change; this process does not.
 
 ### About AI-Friendly Design
 

@@ -14,9 +14,10 @@ services:
   - frontend-base
 assignee: ""
 created: 2026-06-22
-updated: 2026-06-22
+updated: 2026-06-23
 depends_on: []
-wiki_refs: []
+wiki_refs:
+  - .wiki/features/infra.md
 code_files:
   # BFF (NestJS)
   - points-mall-bff/package.json
@@ -75,6 +76,22 @@ code_files:
   - points-mall-frontend-base/rollup.config.mjs
   - points-mall-frontend-base/src/index.ts
   - points-mall-frontend-base/src/components/Button.tsx
+  - points-mall-frontend-base/.github/workflows/publish.yml
+  # Dockerfiles (all deployable services)
+  - points-mall-bff/Dockerfile
+  - points-mall-bff/.dockerignore
+  - points-mall-message/Dockerfile
+  - points-mall-message/.dockerignore
+  - points-mall-frontend/Dockerfile
+  - points-mall-frontend/.dockerignore
+  - points-mall-data/Dockerfile
+  - points-mall-data/.dockerignore
+  - points-mall-core/Dockerfile
+  - points-mall-core/.dockerignore
+  - points-mall-shop/Dockerfile
+  - points-mall-shop/.dockerignore
+  - points-mall-thirdparty-connector/Dockerfile
+  - points-mall-thirdparty-connector/.dockerignore
 test_refs:
   - .tests/api/bff/health/health.bru
   - .tests/api/core/health/health.bru
@@ -95,7 +112,7 @@ test_refs:
 > After human review, extract acceptance criteria into the [Acceptance Criteria] section below
 > and set status to `spec-ready`.
 > Before merging the PR, archive this section to the corresponding file in `.wiki/features/`,
-> fill in `wiki_refs`, and **delete this section**.
+> fill in `wiki_refs`, and **retain this section as a historical record**.
 >
 > 📝 **Spec Amendment (2026-06-22):** `points-mall-thirdparty-connector` framework changed from
 > Express/TypeScript → Spring Boot WebFlux 3.x (Java 21). Reason: developer preference for Java;

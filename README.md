@@ -5,6 +5,17 @@
 [![CI](https://github.com/your-username/fullstack-points-mall/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/fullstack-points-mall/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+## Live Demo
+
+| Environment | URL |
+|------------|-----|
+| **Production** | https://points-mall.onrender.com |
+| **Dev / Staging** | https://points-mall-dev.onrender.com |
+
+> Free tier — first request may take ~30 s to wake up the service.
+
+---
+
 ## What This System Does
 
 Employees earn points automatically through daily attendance check-ins, birthday bonuses, and holiday subsidies. They browse an internal points mall stocked with products synced from Amazon, then redeem points for rewards. Admins configure rules, monitor operations, and export desensitized data reports.
@@ -51,11 +62,11 @@ Employees earn points automatically through daily attendance check-ins, birthday
 | [points-mall-frontend](./points-mall-frontend) | Next.js 14, React 18, TS, TailwindCSS | Employee UI, admin dashboard, data visualization | 3000 |
 | [points-mall-frontend-base](./points-mall-frontend-base) | React 18, TS, Rollup, Storybook | Shared NPM component library — layout, auth hooks, UI primitives | — |
 | [points-mall-bff](./points-mall-bff) | NestJS, TypeScript, Redis | Unified API gateway, JWT auth, request aggregation | 4000 |
-| [points-mall-core](./points-mall-core) | Java 17, Spring Boot 3, PostgreSQL, Redis | Employee accounts, attendance check-in, points ledger | 8080 |
-| [points-mall-shop](./points-mall-shop) | PHP 8.2, Laravel 11, PostgreSQL | Product catalog, inventory, exchange orders, system config | 8081 |
-| [points-mall-message](./points-mall-message) | Node.js 20, Express, TS, RabbitMQ | Local file storage, internal notifications, async event consumer | 8082 |
-| [points-mall-data](./points-mall-data) | Python 3.11, FastAPI, Pandas | ETL pipeline, chart data API, desensitized Excel report export | 8083 |
-| [points-mall-thirdparty-connector](./points-mall-thirdparty-connector) | Node.js 20, Express, TS | Unified hub for all external APIs: GitHub OAuth, AWS S3, Amazon, SendGrid | 8084 |
+| [points-mall-core](./points-mall-core) | Java 25, Spring Boot 4.1, PostgreSQL, Redis | Employee accounts, attendance check-in, points ledger | 8080 |
+| [points-mall-shop](./points-mall-shop) | PHP 8.5, Laravel 13, PostgreSQL | Product catalog, inventory, exchange orders, system config | 8081 |
+| [points-mall-message](./points-mall-message) | Node.js 22, Express 5, TS, RabbitMQ | Local file storage, internal notifications, async event consumer | 8082 |
+| [points-mall-data](./points-mall-data) | Python 3.12, FastAPI, Pandas | ETL pipeline, chart data API, desensitized Excel report export | 8083 |
+| [points-mall-thirdparty-connector](./points-mall-thirdparty-connector) | Java 25, Spring Boot 4.1, WebFlux | Unified hub for all external APIs: GitHub OAuth, AWS S3, Amazon, SendGrid | 8084 |
 
 ---
 
@@ -77,6 +88,7 @@ Employees earn points automatically through daily attendance check-ins, birthday
 | Testing | Vitest (unit), Playwright (E2E), Bruno (API collections) |
 | CI/CD | GitHub Actions — lint → typecheck → test → Docker build → deploy |
 | Containerization | Docker multi-stage builds + docker-compose |
+| Deployment | Render (Blueprint `render.yaml`) — dev + prod environments, Neon PostgreSQL |
 
 ---
 
@@ -105,6 +117,23 @@ Employees earn points automatically through daily attendance check-ins, birthday
 
 ---
 
+## Code Quality
+
+Each service uses the idiomatic formatter for its language ecosystem:
+
+| Service | Formatter | Linter |
+|---------|-----------|--------|
+| bff / frontend / message / frontend-base | Prettier | ESLint |
+| core / thirdparty-connector | Spotless + google-java-format | — |
+| shop | Laravel Pint | — |
+| data | Ruff | Ruff |
+
+A **pre-commit hook** (`.git-hooks/pre-commit`) runs the relevant formatter automatically on staged files before every commit — only for services with staged changes. The commit-msg hook enforces `<type>(<scope>): <summary>` format on all commits.
+
+**Two-layer CI:** The monorepo `.github/workflows/ci.yml` runs all 8 service jobs in parallel on PRs to `main`. Each sub-repo also has its own `.github/workflows/ci.yml` so PRs opened directly in a sub-repo are independently gated — no submodule knowledge required.
+
+---
+
 ## Local Development
 
 ```bash
@@ -112,14 +141,13 @@ Employees earn points automatically through daily attendance check-ins, birthday
 git clone --recurse-submodules https://github.com/your-username/fullstack-points-mall.git
 cd fullstack-points-mall
 
-# 2. Install dependencies and set up Git hooks
-#    This installs @usebruno/cli + husky, then automatically runs hooks:install
-#    which copies the commit-msg hook into the root repo AND all 8 submodule repos.
+# 2. Install root dev tools (Bruno CLI, Husky) and set up Git hooks
 pnpm install
 
-# 3. Copy and configure environment variables
-cp .env.example .env
-# Edit .env with your actual keys (DB password, Redis URL, third-party API keys)
+# 3. Copy and configure environment variables for each service
+#    Each service has its own .env.example — copy and fill in real values
+cp points-mall-core/.env.example points-mall-core/.env
+# Repeat for other services as needed
 
 # 4. Start all services with Docker Compose
 docker-compose up -d
@@ -136,7 +164,20 @@ docker-compose up -d
 > Commits that don't match this format will be rejected locally before reaching GitHub.
 
 > **If you cloned without `--recurse-submodules`**, run:
-> `git submodule update --init --recursive && pnpm install`
+> `git submodule update --init --recursive`
+
+---
+
+## Deployment
+
+All services are containerised (Docker multi-stage builds) and deployed to [Render](https://render.com) via `render.yaml` at the repo root.
+
+| Environment | Neon Branch | Trigger |
+|------------|-------------|--------|
+| **prod** | `main` branch | push to `main` |
+| **dev** | `dev` branch | push to `develop` |
+
+Secret env vars (DB credentials, JWT secrets, API keys) are configured per-environment in the Render dashboard. See `render.yaml` for the full service manifest.
 
 ---
 

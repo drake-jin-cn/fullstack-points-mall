@@ -1,0 +1,17 @@
+# Build outputs
+dist/
+out/
+build/
+.next/
+target/
+
+# Auto-generated
+next-env.d.ts
+**/pnpm-lock.yaml
+**/composer.lock
+**/vendor/
+
+# Other
+node_modules/
+*.min.js
+*.min.css
