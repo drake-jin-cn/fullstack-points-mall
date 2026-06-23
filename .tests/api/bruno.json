@@ -3,13 +3,13 @@
   "name": "Points Mall API Tests",
   "environments": {
     "local": {
-      "bffBaseUrl": "http://localhost:3000",
+      "bffBaseUrl": "http://localhost:4000",
       "coreBaseUrl": "http://localhost:8080",
-      "shopBaseUrl": "http://localhost:8000",
-      "messageBaseUrl": "http://localhost:3001",
-      "thirdpartyBaseUrl": "http://localhost:8082",
-      "dataBaseUrl": "http://localhost:8001",
-      "frontendBaseUrl": "http://localhost:3003"
+      "shopBaseUrl": "http://localhost:8081",
+      "messageBaseUrl": "http://localhost:8082",
+      "thirdpartyBaseUrl": "http://localhost:8084",
+      "dataBaseUrl": "http://localhost:8083",
+      "frontendBaseUrl": "http://localhost:3000"
     },
     "staging": {
       "bffBaseUrl": "https://staging-bff.your-domain.com",

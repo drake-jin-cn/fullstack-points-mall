@@ -73,17 +73,26 @@ assert {
 
 ```json
 {
+  "version": "1",
+  "name": "Points Mall API Tests",
   "environments": {
     "local": {
-      "baseUrl": "http://localhost:3100",
-      "testEmail": "test@company.com",
-      "testPassword": "Test123456"
+      "bffBaseUrl": "http://localhost:4000",
+      "coreBaseUrl": "http://localhost:8080",
+      "shopBaseUrl": "http://localhost:8081",
+      "messageBaseUrl": "http://localhost:8082",
+      "thirdpartyBaseUrl": "http://localhost:8084",
+      "dataBaseUrl": "http://localhost:8083",
+      "frontendBaseUrl": "http://localhost:3000"
     },
     "staging": {
-      "baseUrl": "https://staging-api.your-domain.com"
-    },
-    "production": {
-      "baseUrl": "https://api.your-domain.com"
+      "bffBaseUrl": "https://staging-bff.your-domain.com",
+      "coreBaseUrl": "https://staging-core.your-domain.com",
+      "shopBaseUrl": "https://staging-shop.your-domain.com",
+      "messageBaseUrl": "https://staging-message.your-domain.com",
+      "thirdpartyBaseUrl": "https://staging-thirdparty.your-domain.com",
+      "dataBaseUrl": "https://staging-data.your-domain.com",
+      "frontendBaseUrl": "https://staging.your-domain.com"
     }
   }
 }

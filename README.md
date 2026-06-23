@@ -126,8 +126,8 @@ docker-compose up -d
 
 # Services available at:
 #   Frontend:  http://localhost:3000
-#   BFF API:   http://localhost:3000 (NestJS)
-#   Swagger:   http://localhost:3000/api-docs
+#   BFF API:   http://localhost:4000 (NestJS)
+#   Swagger:   http://localhost:4000/api-docs
 ```
 
 > **Git hooks** are installed automatically by `pnpm install` (via the `prepare` lifecycle script).
