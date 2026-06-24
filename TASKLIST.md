@@ -28,7 +28,7 @@
 
 **Goal:** All 8 services have a runnable skeleton. Shared infrastructure (DB, Redis, MQ) is defined. Team can `docker-compose up` and see all services respond.
 
-> **INFRA tasks** are tracked in `.tasks/TASK-INFRA-XXXX.md` and managed via `pnpm run tasks:*` scripts.
+> **INFRA tasks** are tracked in `.tasks/infra/TASK-INFRA-XXXX.md` and managed via `pnpm run tasks:*` scripts.
 
 ### 1 — Service Foundation
 

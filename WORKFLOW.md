@@ -31,13 +31,17 @@ fullstack-points-mall/
 │   ├── _index.md                      # Task overview index (auto-rebuilt by script, do not edit)
 │   ├── _templates/
 │   │   └── task-template.md           # Task file template
-│   ├── TASK-AUTH-0001.md               # Auth & authorization tasks
-│   ├── TASK-POINTS-0001.md             # Points system tasks
-│   ├── TASK-SHOP-0001.md               # Shop & orders tasks
-│   ├── TASK-ATTEND-0001.md             # Attendance management tasks
-│   ├── TASK-NOTIFY-0001.md             # Notifications tasks
-│   ├── TASK-DATA-0001.md               # Data export tasks
-│   └── TASK-INFRA-0001.md              # Infrastructure tasks
+│   ├── infra/                         # Phase 0 — Scaffolding & infrastructure tasks
+│   ├── auth/                          # Phase 1 — Auth foundation tasks
+│   ├── perm/                          # Phase 2 — Permission system tasks
+│   ├── attend/                        # Phase 3 — Attendance & points core tasks
+│   ├── shop/                          # Phase 4 — Product catalog & exchange shop tasks
+│   ├── notify/                        # Phase 5 — File storage & notifications tasks
+│   ├── data/                          # Phase 6 — Data dashboard & ETL tasks
+│   ├── perf/                          # Phase 7 — Performance & security tasks
+│   ├── fe/                            # Phase 8 — Frontend engineering tasks
+│   ├── i18n/                          # Phase 9 — Overseas & i18n tasks
+│   └── devops/                        # Phase 10 — DevOps & final polish tasks
 │
 ├── .wiki/                             # Project knowledge base (replacing Confluence/Notion)
 │   ├── README.md                      # Wiki writing guidelines
@@ -101,7 +105,9 @@ Step 1   Receive raw requirements and development instructions
          ↓
 Step 2   Read WORKFLOW.md (this file)
          ↓
-Step 3   Create a task file following the .tasks/_templates/task-template.md format
+Step 3   Create a task file in the matching domain subfolder under .tasks/
+          following the .tasks/_templates/task-template.md format
+          (e.g. .tasks/auth/TASK-AUTH-0001.md, .tasks/shop/TASK-SHOP-0001.md)
           - id: auto-increment from the current highest sequence number in the domain
           - status: draft
           - Raw Requirements: fill in the actual requirements
@@ -303,7 +309,7 @@ Script logic:
 When changes to the `.wiki/` directory are detected via `.git/hooks/post-commit` or CI:
 
 1. Extract the list of modified Spec files from the current commit
-2. Scan all `.tasks/*.md` for tasks whose `wiki_refs` include those files
+2. Scan all `.tasks/**/*.md` for tasks whose `wiki_refs` include those files
 3. Automatically downgrade those tasks' status to `spec-ready` (preserving the previous status in history)
 4. Output the list of affected tasks and prompt AI to re-implement
 
@@ -588,7 +594,7 @@ Open PR → CODEOWNERS auto-requests tech-lead review
 tech-lead reviews and confirms changes → approves → merges
     ↓
 CI spec-consistency job triggers:
-  Scans affected .tasks/*.md
+  Scans affected .tasks/**/*.md
   Auto-downgrades associated tasks to spec-ready
   Appends status change history to each task file
     ↓

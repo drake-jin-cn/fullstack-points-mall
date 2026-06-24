@@ -37,19 +37,34 @@ function parseFrontmatter(content) {
   return result;
 }
 
-// ─── collect all task files ───────────────────────────────────────────────────
+// ─── collect all task files (recursive) ─────────────────────────────────────
 function collectTasks() {
-  const files = fs.readdirSync(TASKS_DIR)
-    .filter(f => /^TASK-.+\.md$/.test(f))
-    .sort();
+  const entries = [];
 
-  return files.map(file => {
-    const filePath = path.join(TASKS_DIR, file);
+  function walk(dir) {
+    for (const name of fs.readdirSync(dir).sort()) {
+      if (name.startsWith('_')) continue; // skip _index.md, _templates/
+      const full = path.join(dir, name);
+      const stat = fs.statSync(full);
+      if (stat.isDirectory()) {
+        walk(full);
+      } else if (/^TASK-.+\.md$/.test(name)) {
+        entries.push({ file: name, filePath: full });
+      }
+    }
+  }
+
+  walk(TASKS_DIR);
+
+  return entries.map(({ file, filePath }) => {
     const content = fs.readFileSync(filePath, 'utf-8');
     const meta = parseFrontmatter(content);
+    const rel = path.relative(TASKS_DIR, filePath);
+    const domain = rel.includes(path.sep) ? rel.split(path.sep)[0] : '—';
     return {
       file,
       filePath,
+      domain,
       id: meta.id || file.replace('.md', ''),
       title: meta.title || '(no title)',
       status: meta.status || 'unknown',
@@ -58,6 +73,25 @@ function collectTasks() {
       priority: meta.priority || '—',
     };
   });
+}
+
+// ─── find task file across subdirectories ────────────────────────────────────
+function findTaskFile(taskId) {
+  function walk(dir) {
+    for (const name of fs.readdirSync(dir)) {
+      if (name.startsWith('_')) continue;
+      const full = path.join(dir, name);
+      const stat = fs.statSync(full);
+      if (stat.isDirectory()) {
+        const found = walk(full);
+        if (found) return found;
+      } else if (name === `${taskId}.md`) {
+        return full;
+      }
+    }
+    return null;
+  }
+  return walk(TASKS_DIR);
 }
 
 // ─── status order for grouping ────────────────────────────────────────────────
@@ -99,11 +133,11 @@ function buildIndex(tasks) {
   for (const status of statuses) {
     lines.push(`## ${status} (${byStatus[status].length})`);
     lines.push('');
-    lines.push('| ID | Title | Assignee | Updated |');
-    lines.push('|----|-------|----------|---------|');
+    lines.push('| ID | Domain | Title | Assignee | Updated |');
+    lines.push('|----|--------|-------|----------|---------|');
     for (const t of byStatus[status]) {
       const titleEsc = t.title.replace(/\|/g, '\\|');
-      lines.push(`| ${t.id} | ${titleEsc} | ${t.assignee} | ${t.updated} |`);
+      lines.push(`| ${t.id} | ${t.domain} | ${titleEsc} | ${t.assignee} | ${t.updated} |`);
     }
     lines.push('');
   }
@@ -127,8 +161,8 @@ if (isView) {
     console.error('Usage: tasks-sync.js --view <TASK-ID>');
     process.exit(1);
   }
-  const filePath = path.join(TASKS_DIR, `${taskId}.md`);
-  if (!fs.existsSync(filePath)) {
+  const filePath = findTaskFile(taskId);
+  if (!filePath) {
     console.error(`Task not found: ${taskId}`);
     process.exit(1);
   }

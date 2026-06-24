@@ -50,8 +50,8 @@ This spec defines the minimum viable toolchain so that:
 
 ### `tasks-sync.js` responsibilities
 
-- Parse YAML frontmatter from every `.tasks/TASK-*.md`
-- Generate `.tasks/_index.md` with a status-grouped table: id / title / status / assignee / updated
+- Parse YAML frontmatter from every `.tasks/**/*.md` (recursive subdirectory scan)
+- Generate `.tasks/_index.md` with a status-grouped table: id / domain / title / assignee / updated
 - `--list [--status=X]` prints to stdout (no file write)
 - `--view TASK-ID` prints the task file to stdout
 
