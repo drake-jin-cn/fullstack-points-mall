@@ -58,10 +58,22 @@ function parseTaskFile(filePath) {
   return task;
 }
 
+function getAllTaskFiles(dir) {
+  const results = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory() && !entry.name.startsWith('_')) {
+      results.push(...getAllTaskFiles(fullPath));
+    } else if (entry.isFile() && entry.name.startsWith('TASK-') && entry.name.endsWith('.md')) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+}
+
 function getAllTasks() {
-  return fs.readdirSync(TASKS_DIR)
-    .filter(f => f.startsWith('TASK-') && f.endsWith('.md'))
-    .map(f => parseTaskFile(path.join(TASKS_DIR, f)))
+  return getAllTaskFiles(TASKS_DIR)
+    .map(f => parseTaskFile(f))
     .filter(Boolean);
 }
 

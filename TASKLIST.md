@@ -11,7 +11,7 @@
 ## Table of Contents
 
 - [Phase 0 — Project Scaffolding](#phase-0--project-scaffolding-t001t005)
-- [Phase 1 — Auth Foundation](#phase-1--auth-foundation-t006t015)
+- [Phase 1 — Auth Foundation](#phase-1--auth-foundation-t006t015-t097t099)
 - [Phase 2 — Permission System](#phase-2--permission-system-t016t022)
 - [Phase 3 — Attendance & Points Core](#phase-3--attendance--points-core-t023t033)
 - [Phase 4 — Product Catalog & Exchange Shop](#phase-4--product-catalog--exchange-shop-t034t044)
@@ -67,19 +67,26 @@
 
 ---
 
-## Phase 1 — Auth Foundation (T006–T015)
+## Phase 1 — Auth Foundation (T006–T015, T097–T099)
 
-**Goal:** Users can log in with email/password. All services validate JWT. Token storage follows security best practices.
+**Goal:** Users can log in with email/password, GitHub OAuth, or Enterprise SSO (OIDC). All services validate JWT. Token storage follows security best practices.
 
-- [ ] **T006** 🟡 `[core]` Employee login API: `POST /auth/login` — validate email + bcrypt password, return employee info. Employee seeder: one admin + two employee accounts. Database: `employees` table with hashed password field.
+- [ ] **T006** 🟡 `[core]` Employee credential verification API: `POST /internal/auth/verify` — validate email + bcrypt password, return employee info. Endpoint is internal-only (requires `INTERNAL_API_KEY` header, rejects all other callers). Employee seeder: one admin + two employee accounts. Database: add `V7__add_password_hash_to_employees.sql` Flyway migration to add `password_hash VARCHAR NOT NULL` column to existing `employees` table (created in Phase 0 without this field).
+  - **Architecture**: Classic layered approach — `InternalApiKeyFilter` → `AuthVerifyController` → `EmployeeAuthService` → `EmployeeRepository`
+  - **INTERNAL_API_KEY validation**: `OncePerRequestFilter` intercepts all `/internal/**` routes globally; returns 401 JSON immediately on invalid/missing key — do NOT check per-controller (one missed endpoint = security hole)
+  - **BCrypt dependency**: add `spring-security-crypto` only (zero side effects); do NOT use `spring-boot-starter-security` (activates login page, CSRF, session management, and other unwanted defaults)
+  - **Seeder environment**: `ApplicationRunner` annotated with `@Profile({"dev","test"})`; seeds one admin + two employee accounts on startup in dev/test only — production must never auto-create accounts
+  - **Why not full Spring Security**: Core has no external callers; all requests come from BFF over the internal network, so there are no JWT-bearing users — a single `OncePerRequestFilter` is the minimal sufficient solution
 
-- [ ] **T007** 🟡 `[bff]` JWT issuance strategy: on login, issue `access_token` (15 min) + `refresh_token` (7 days) using `@nestjs/jwt`. `POST /auth/login` proxies credential validation to Core, then issues tokens. Global `AuthGuard` validates bearer token on all protected routes.
+- [ ] **T007** 🟡 `[bff]` JWT issuance strategy: on login, issue `access_token` (15 min) + `refresh_token` (7 days) using `@nestjs/jwt`. `POST /auth/login` proxies credential validation to Core's `POST /internal/auth/verify` via shared internal `INTERNAL_API_KEY` header (Core rejects calls without it); issues `access_token` via `Set-Cookie: access_token=...; HttpOnly; Secure; SameSite=Strict`; stores `refresh_token` in Redis (`refresh:{userId}`, TTL 7 days). Global `AuthGuard` validates bearer token on all protected routes; `/auth/login` and `/auth/refresh` are explicitly whitelisted.
 
-- [ ] **T008** 🟡 `[bff]` Token refresh endpoint: `POST /auth/refresh` — validates refresh token, issues new access token. Silent refresh logic: if access token is expired but refresh token is valid, auto-renew. Invalidation endpoint: `POST /auth/logout` clears refresh token.
+- [ ] **T015** 🟢 `[shop, message, data]` Add JWT validation middleware to all three remaining downstream services: extract and verify bearer token on every protected route; return `401` if invalid or missing. All services now uniformly reject unauthorized requests. *(moved here: only depends on T007's token format, independent of OAuth/OIDC)*
+
+- [ ] **T008** 🟡 `[bff]` Token refresh endpoint: `POST /auth/refresh` — validates refresh token by checking Redis key `refresh:{userId}` exists (server-side validity, not just signature); issues new access token via `Set-Cookie`. Invalidation endpoint: `POST /auth/logout` — DEL `refresh:{userId}` from Redis, clear access token cookie. Silent refresh logic: if access token cookie is expired but Redis refresh key is valid, auto-renew.
 
 - [ ] **T009** 🟡 `[frontend-base]` Axios infrastructure: configure base URL, request interceptor (inject `Authorization: Bearer <token>`, timestamp header), response interceptor (unwrap `{ code, data, message }` envelope, map error codes to toast messages). HttpOnly Cookie read for token storage helper.
 
-- [ ] **T010** 🟡 `[frontend]` Login page: email + password form with React Hook Form + Zod validation; call BFF login API; store `access_token` in `HttpOnly Cookie` (via BFF `Set-Cookie`), store user info in `useAuthStore` (Zustand). Redirect to dashboard on success.
+- [ ] **T010** 🟡 `[frontend]` Login page: email + password form with React Hook Form + Zod validation; call BFF login API via Axios instance from T009 (depends on T009); `access_token` is set automatically via BFF `Set-Cookie` — no manual token storage needed; store user info in `useAuthStore` (Zustand). Redirect to dashboard on success.
 
 - [ ] **T011** 🟡 `[frontend-base]` Silent token refresh interceptor: on 401 response, pause the failed request queue, call `/auth/refresh`, then replay all queued requests with the new token. If refresh also fails, clear auth state and redirect to login.
 
@@ -89,7 +96,15 @@
 
 - [ ] **T014** 🟢 `[frontend]` GitHub OAuth button on login page: redirect to `GET /auth/github`; handle `/auth/github/callback` page — extract token from URL params, persist to store, redirect to dashboard.
 
-- [ ] **T015** 🟢 `[shop, message, data]` Add JWT validation middleware to all three remaining downstream services: extract and verify bearer token on every protected route; return `401` if invalid or missing. All services now uniformly reject unauthorized requests.
+### Enterprise SSO Extension (OIDC)
+
+- [ ] **T097** 🔴 `[thirdparty]` Keycloak OIDC module: `GET /oauth/oidc/url` — build authorization URL with PKCE (`code_challenge`, `code_challenge_method=S256`); `POST /oauth/oidc/callback` — exchange `code` + `code_verifier` for tokens at Keycloak/Auth0 token endpoint; verify `id_token` signature using IdP's JWKS endpoint (`/.well-known/openid-configuration`); return normalized `{ sub, email, name, preferred_username }`. Config via env vars (`OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`) — IdP is swappable with no code change:
+  - **Local dev**: add `keycloak:24` to `docker-compose.yml` (`start-dev` mode, port 8080); create realm `points-mall` + client via Keycloak admin UI; set `OIDC_ISSUER=http://localhost:8080/realms/points-mall`.
+  - **Production (Render)**: Keycloak is too heavy for free tier — use Auth0 free tier (7500 MAU) instead; register account at auth0.com, create Application (Regular Web App), set `OIDC_ISSUER=https://<tenant>.auth0.com` in Render env vars. Same OIDC protocol, zero code change.
+
+- [ ] **T098** 🟡 `[bff]` OIDC SSO login flow: `GET /auth/sso` redirects to IdP authorization URL (from ThirdPartyConnector); `GET /auth/sso/callback` relays OIDC callback to ThirdPartyConnector, looks up or creates local employee record by IdP `sub` field (via Core), issues internal JWT same as password/GitHub login. All three login methods now converge at a single JWT issuance path — business logic is auth-method agnostic.
+
+- [ ] **T099** 🟢 `[frontend]` SSO login button on login page: "Enterprise SSO" button redirects to `GET /auth/sso`; `/auth/sso/callback` page extracts token from URL params, persists to `useAuthStore`, redirects to dashboard. Login page now presents three login options side by side: Email/Password, GitHub OAuth, Enterprise SSO.
 
 ---
 
@@ -362,7 +377,7 @@
   - `data`: Python dependencies → uvicorn runner stage
   - `thirdparty`: Node builder → production runner stage
 
-- [ ] **T090** 🟡 `[all]` `docker-compose.yml` for full local dev stack: all 8 application services + `postgres:15` (two DB instances or schemas) + `redis:7-alpine` + `rabbitmq:3-management`; health checks and `depends_on` on all services; `.env.docker` override file; verify `docker-compose up -d` brings entire stack up cleanly.
+- [ ] **T090** 🟡 `[all]` `docker-compose.yml` for full local dev stack: all 8 application services + `postgres:15` (two DB instances or schemas) + `redis:7-alpine` + `rabbitmq:3-management` + `keycloak:24` (SSO IdP for local dev, `start-dev` mode, port 8080); health checks and `depends_on` on all services; `.env.docker` override file; verify `docker-compose up -d` brings entire stack up cleanly.
 
 - [x] **T091** 🟡 `[all]` GitHub Actions CI workflow (`.github/workflows/ci.yml`): triggers on PR to `main`; jobs run in parallel per service:
   - frontend/bff/message/thirdparty: `pnpm lint && pnpm typecheck && pnpm test`
@@ -401,7 +416,7 @@
 | Phase | Tasks | Focus |
 |-------|-------|-------|
 | 0 — Scaffolding | T001–T005 | All services initialized and runnable |
-| 1 — Auth | T006–T015 | JWT, GitHub OAuth, token lifecycle |
+| 1 — Auth | T006–T015, T097–T099 | JWT, GitHub OAuth, OIDC SSO, token lifecycle |
 | 2 — Permissions | T016–T022 | RBAC end-to-end, dynamic menus |
 | 3 — Attendance & Points | T023–T033 | Core business logic, scheduled jobs |
 | 4 — Shop | T034–T044 | Product catalog, Amazon sync, orders |
@@ -411,4 +426,4 @@
 | 8 — Engineering Polish | T072–T081 | NPM publish, Storybook, tests, advanced UX |
 | 9 — Overseas & i18n | T082–T088 | i18n, timezone, GDPR, Safari compat |
 | 10 — DevOps | T089–T096 | Docker, CI/CD, monitoring, demo run |
-| **Total** | **96 tasks** | **~3–4 months at 1 task/day** |
+| **Total** | **99 tasks** | **~3–4 months at 1 task/day** |

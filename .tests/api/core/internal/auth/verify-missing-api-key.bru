@@ -1,0 +1,24 @@
+meta {
+  name: Verify employee - missing API key
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{coreBaseUrl}}/internal/auth/verify
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "alice@pointsmall.com",
+    "password": "Alice@123456"
+  }
+}
+
+assert {
+  res.status: eq 401
+  res.body.code: eq core-1003
+  res.body.traceId: isDefined
+}

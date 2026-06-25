@@ -113,13 +113,17 @@ Step 3   Create a task file in the matching domain subfolder under .tasks/
           - Raw Requirements: fill in the actual requirements
           - Spec section: leave blank, mark as "to be filled after Spec is generated"
          ↓
-Step 4   Convert raw requirements into a Spec, fill it into the task file's [Spec] section;
-          clarify any ambiguities with the human before proceeding.
+Step 4   Convert raw requirements into a Spec and draft Acceptance Criteria:
+          - Fill the [Spec] section in the task file with detailed technical decisions
+          - Fill the [Acceptance Criteria] section with a numbered checklist derived from the Spec
+            (AI-generated draft: cover happy path, error cases, edge cases, and security constraints)
+          - Clarify any ambiguities with the human before proceeding
           Update status to spec-pending
          ↓
-Step 5   ⚠️ Wait for human to confirm the Spec and extract acceptance criteria
-          into the [Acceptance Criteria] section.
-          Resume only after human updates status to spec-ready
+Step 5   ⚠️ Wait for human to review and approve the Spec + Acceptance Criteria draft.
+          Human may edit individual AC items, add missing scenarios, or reject and request a rewrite.
+          Resume only after human explicitly confirms (e.g. replies "AC looks good" or updates status).
+          Update status to spec-ready
          ↓
 Step 6   Implement code based on the [Spec] section,
           update task status → in-dev, append status change history
@@ -222,8 +226,8 @@ draft ──→ spec-pending ──→ spec-ready ──→ in-dev ──→ dev
 | Status | Meaning | Triggered By |
 |--------|---------|--------------|
 | `draft` | Raw requirements converted into a structured TASK file, awaiting human confirmation | AI when converting raw requirements |
-| `spec-pending` | TASK content confirmed, awaiting Spec generation and review | Human after confirming TASK content |
-| `spec-ready` | Acceptance criteria extracted from Spec and written to task file, review passed, development may begin (Spec section remains in task file until archived to `.wiki/` before PR merge) | Human after confirming acceptance criteria |
+| `spec-pending` | AI has generated Spec + draft Acceptance Criteria; awaiting human review and approval | AI after generating Spec and draft AC |
+| `spec-ready` | Human has reviewed and approved the Spec and Acceptance Criteria (with edits if needed); development may begin | Human after confirming |
 | `in-dev` | Developer (AI or human) is implementing; feature branch opened | Developer when starting work |
 | `dev-done` | Implementation complete, PR opened, awaiting CI and code review | Developer after opening PR |
 | `test-fail` | CI tests did not pass, fix required | CI / `test:task` script (automated) |

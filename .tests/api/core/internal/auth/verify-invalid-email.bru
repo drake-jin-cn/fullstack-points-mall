@@ -1,0 +1,28 @@
+meta {
+  name: Verify employee - invalid email format
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{coreBaseUrl}}/internal/auth/verify
+  body: json
+  auth: none
+}
+
+headers {
+  INTERNAL_API_KEY: {{coreInternalApiKey}}
+}
+
+body:json {
+  {
+    "email": "not-an-email",
+    "password": "Alice@123456"
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.code: eq core-1010
+  res.body.traceId: isDefined
+}
