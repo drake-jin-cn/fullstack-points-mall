@@ -230,6 +230,25 @@ A：
 
 ---
 
+**Q20-补充：Render 的"Outbound IP Addresses"是私有网络吗？**
+
+A：不是，这是两个完全不同的概念，容易混淆：
+
+| 概念 | 说明 |
+|------|------|
+| **出站 IP（Outbound IP）** | 你的服务**向外发起请求**时，对方看到的来源 IP。比如 Core 调用 GitHub API，GitHub 日志里记录的是这个 IP |
+| **私有网络（Private Network）** | 服务之间通过内网互通，Core **没有公网入口**，外部根本无法建立连接 |
+
+Render 免费套餐没有私有网络，所有服务都有公网地址，任何人只要知道 URL 就能发请求。`INTERNAL_API_KEY` 此时是唯一的防线。
+
+**Outbound IP 的实际用途**：数据库 IP 白名单。比如你的 PostgreSQL 只允许特定 IP 连接，就把这段 IP 加进白名单，防止其他人的服务连进你的数据库。
+
+**实际项目建议**：
+- 开发/测试阶段：用 `INTERNAL_API_KEY` 就够，接受 Core 有公网地址
+- 生产阶段：用 Render 付费版 Private Network，或迁移到 AWS/GCP 的 VPC，让 Core 彻底没有公网入口
+
+---
+
 ## 八、综合设计题
 
 **Q21：如果未来 Core 服务需要开放给第三方合作伙伴直接调用（不经过 BFF），认证方案需要如何改造？**
