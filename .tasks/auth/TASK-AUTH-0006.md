@@ -108,6 +108,7 @@ src/
 | `points-mall-frontend/src/components/ui/LoadingOverlay.tsx` | add |
 | `points-mall-frontend/src/app/layout.tsx` | modify: wrap with AppProviders |
 | `points-mall-frontend/src/app/(auth)/login/page.tsx` | add |
+| `points-mall-frontend/src/middleware.ts` | add: Edge Runtime cookie check, public route whitelist |
 | `points-mall-frontend/.env.example` | add: NEXT_PUBLIC_BFF_URL |
 
 ## Acceptance Criteria
@@ -130,6 +131,7 @@ src/
 - [ ] AC-16: All queued requests are replayed after a successful refresh.
 - [ ] AC-17: If `POST /auth/refresh` fails, auth state is cleared and user is redirected to `/login`.
 - [ ] AC-18: The refresh interceptor does not enter an infinite loop when `/auth/refresh` itself returns 401.
+- [ ] AC-19: 未登录用户（无 `access_token` cookie）访问内部路由，`middleware.ts` 服务端直接重定向到 `/login`，页面 HTML 不下发。`/login` 等公开路由不受拦截。
 
 ## Status Change History
 
