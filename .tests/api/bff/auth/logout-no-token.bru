@@ -1,0 +1,15 @@
+meta {
+  name: BFF logout - no access_token cookie
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{bffBaseUrl}}/auth/logout
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+}

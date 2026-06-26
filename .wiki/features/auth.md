@@ -1,7 +1,7 @@
 # Auth Feature Spec
 
 > **Status:** active  
-> **Related tasks:** TASK-AUTH-0001  
+> **Related tasks:** TASK-AUTH-0001, TASK-AUTH-0002, TASK-AUTH-0003, TASK-AUTH-0004  
 > **Last updated:** 2026-06-26
 
 ---
@@ -157,3 +157,146 @@ com.pointsmall.core
 | Version | Date | Author | Summary |
 |---------|------|--------|---------|
 | 1.0 | 2026-06-26 | AI | Initial: auth verify API, error code convention, seeder, security notes (TASK-AUTH-0001) |
+
+---
+
+## 7. Token Refresh Endpoint (T008 — TASK-AUTH-0003)
+
+> Related task: TASK-AUTH-0003
+
+### Background
+
+TASK-AUTH-0002 issues `access_token` (15 min HttpOnly cookie) and stores `refresh:{userId}` in Redis (7 days TTL). This section completes the token lifecycle with refresh and logout.
+
+### POST /auth/refresh
+
+```
+POST /auth/refresh
+Cookie: access_token=<expired or valid JWT>
+(No Authorization header required — @Public)
+```
+
+**Flow:**
+1. Read `access_token` cookie
+2. `jwtService.decode()` — accepts expired tokens, returns `null` on malformed input
+3. Extract `sub` (userId) from payload
+4. `redis.exists('refresh:{userId}')` — check server-side session validity
+5. On success: sign new JWT, `Set-Cookie: access_token=<new>; HttpOnly; Secure; SameSite=Strict`
+
+**Success `200`:**
+```json
+{ "code": "OK", "data": { "user": { "id": 1, "email": "...", "roles": ["employee"] } } }
+```
+
+**Error responses:**
+
+| Code | HTTP | Scenario |
+|------|------|----------|
+| `bff-2003` | 401 | Token missing, malformed, or decode returns null |
+| `bff-2004` | 401 | Redis key `refresh:{userId}` does not exist (session expired or logged out) |
+
+**Key design decision:** `jwtService.decode()` (not `verify()`) is used — verify() rejects expired tokens, but refresh is specifically for expired access tokens. Redis key is the source of truth for session validity.
+
+**Redis refresh key is NOT renewed** on `/auth/refresh` calls — only a new access token is issued.
+
+### POST /auth/logout
+
+```
+POST /auth/logout
+Cookie: access_token=<valid JWT>
+(Protected — JwtAuthGuard applies)
+```
+
+**Flow:**
+1. JwtAuthGuard validates access token → extracts `req.user.sub` (userId)
+2. `redis.del('refresh:{userId}')` — server-side session invalidation
+3. `res.clearCookie('access_token', { path: '/' })` — clear client cookie
+
+**Success `200`:** `{ "code": "OK", "data": null }`
+
+After logout, any subsequent `/auth/refresh` call returns `bff-2004`.
+
+### Error Code Updates
+
+| Code | HTTP | Scenario |
+|------|------|----------|
+| `bff-2003` | 401 | Invalid / missing access_token (decode failure) |
+| `bff-2004` | 401 | Session expired — Redis refresh key not found |
+
+---
+
+## 8. JWT Validation Middleware — All Downstream Services (T015 — TASK-AUTH-0004)
+
+> Related task: TASK-AUTH-0004
+
+### Background
+
+All downstream services (shop, message, data, tpc) previously had no authentication. This adds defense-in-depth: each service independently validates the JWT Bearer token, rejecting unauthorized requests even if BFF is bypassed (internal network intrusion, misconfiguration).
+
+BFF is the sole entry point. When calling downstream services, BFF forwards the user's JWT as `Authorization: Bearer <token>`. Downstream services decode the token to extract `userId`.
+
+### Design Principles
+
+- Algorithm: HS256, shared `JWT_SECRET` across all services
+- Header: `Authorization: Bearer <token>`
+- `/health` endpoint excluded from auth on all services (required by load balancers / k8s probes)
+- Uniform error format: `{ "code": "<svc>-xxxx", "message": "Unauthorized", "data": null }`
+
+### Service Implementations
+
+| Service | Framework | Mechanism | Error Code |
+|---------|-----------|-----------|------------|
+| shop | Laravel (PHP) | `JwtAuthMiddleware` implements `Middleware` | `shop-4001` |
+| message | Express (Node.js) | `jwtAuth` middleware function | `msg-5001` |
+| data | FastAPI (Python) | `verify_token` + `Depends()` | `data-6001` |
+| tpc | Spring WebFlux (Java) | `JwtAuthWebFilter` implements `WebFilter` | `tpc-7001` |
+
+#### Shop (Laravel)
+```php
+// app/Http/Middleware/JwtAuthMiddleware.php
+// Registered on api group in bootstrap/app.php
+// /api/health excluded via withoutMiddleware()
+JWT::decode($token, new Key($secret, 'HS256'));
+```
+Library: `firebase/php-jwt` v7 (requires HMAC key ≥ 32 chars)
+
+#### Message (Express)
+```typescript
+// src/middleware/jwtAuth.ts
+// /health registered BEFORE app.use(jwtAuth) in index.ts
+jwt.verify(token, secret, { algorithms: ['HS256'] })
+```
+Library: `jsonwebtoken`
+
+#### Data (FastAPI)
+```python
+# app/dependencies/auth.py
+# Applied as dependencies=[Depends(verify_token)] on protected routes
+# /health has no Depends
+jwt.decode(token, secret, algorithms=["HS256"], options={"verify_sub": False})
+```
+Library: `PyJWT` 2.x (`verify_sub: False` required — BFF issues integer `sub`, PyJWT expects string)
+
+#### TPC (Spring WebFlux)
+```java
+// com.pointsmall.thirdparty.security.JwtAuthWebFilter
+// Registered as @Bean WebFilter in SecurityConfig
+// Reactive: returns Mono<Void>, uses ServerWebExchange
+Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token)
+```
+Library: `io.jsonwebtoken:jjwt-api` 0.12.x
+
+### Core vs Other Services
+
+`points-mall-core` uses `INTERNAL_API_KEY` (not JWT) because its `/internal/auth/verify` endpoint is called **before** a JWT exists (it is the credential verification step that precedes JWT issuance). This is by design — the auth system's source cannot be authenticated by itself. Core follows **Mixed Authentication**: API Key for pre-auth endpoints, JWT for future user-context endpoints.
+
+---
+
+## Change Log
+
+| Version | Date | Author | Summary |
+|---------|------|--------|---------|
+| 1.0 | 2026-06-26 | AI | Initial: auth verify API, error code convention, seeder, security notes (TASK-AUTH-0001) |
+| 1.1 | 2026-06-26 | AI | Added T007: JWT issuance, HttpOnly cookie, Redis refresh key, global AuthGuard (TASK-AUTH-0002) |
+| 1.2 | 2026-06-26 | AI | Added T008: refresh/logout endpoints, bff-2003/bff-2004 error codes (TASK-AUTH-0003) |
+| 1.3 | 2026-06-26 | AI | Added T015: JWT middleware for shop/message/data/tpc, defense-in-depth design (TASK-AUTH-0004) |

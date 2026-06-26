@@ -1,7 +1,7 @@
 # Task Overview Index
 
 > ⚠️ This file is maintained automatically by the `test:task` script and AI. **Do not edit directly.**
-> Last updated: 2026-06-26 05:44 | Total: 8 tasks
+> Last updated: 2026-06-26 08:59 | Total: 10 tasks
 
 ---
 
@@ -14,9 +14,9 @@
 | in-dev | 0 |
 | dev-done | 0 |
 | test-fail | 0 |
-| test-pass | 7 |
+| test-pass | 9 |
 | closed | 0 |
-| **Total** | **8** |
+| **Total** | **10** |
 
 ---
 
@@ -66,6 +66,8 @@
 |----|-------|----------|---------|
 | TASK-AUTH-0001 | Employee credential verification API: POST /internal/auth/verify | undefined | 2026-06-26 |
 | TASK-AUTH-0002 | BFF JWT issuance strategy: POST /auth/login + global AuthGuard | undefined | 2026-06-26 |
+| TASK-AUTH-0003 | BFF token refresh and logout: POST /auth/refresh + POST /auth/logout | undefined | 2026-06-26 |
+| TASK-AUTH-0004 | JWT validation middleware for all downstream services (shop, message, data, tpc) | undefined | 2026-06-26 |
 | TASK-INFRA-0001 | Initialize all repo skeletons with framework boilerplate | undefined | 2026-06-23 |
 | TASK-INFRA-0002 | Build project toolchain: task scripts, Bruno CLI, Git hooks, GitHub Actions CI | undefined | 2026-06-23 |
 | TASK-INFRA-0003 | Multi-environment config setup for all 8 services | undefined | 2026-06-23 |

@@ -1,0 +1,24 @@
+meta {
+  name: BFF refresh - valid expired token (Redis key present)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{bffBaseUrl}}/auth/refresh
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: access_token={{expiredAccessToken}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.code: eq OK
+  res.body.data.user.id: isDefined
+  res.body.data.user.email: isDefined
+  res.body.data.user.roles: isDefined
+  res.headers["set-cookie"]: isDefined
+}

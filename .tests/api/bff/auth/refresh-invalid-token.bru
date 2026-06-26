@@ -1,0 +1,22 @@
+meta {
+  name: BFF refresh - invalid/malformed token
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{bffBaseUrl}}/auth/refresh
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: access_token=this.is.not.a.jwt
+}
+
+assert {
+  res.status: eq 401
+  res.body.code: eq bff-2003
+  res.body.data: isNull
+  res.body.traceId: isDefined
+}

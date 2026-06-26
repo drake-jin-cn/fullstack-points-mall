@@ -1,0 +1,22 @@
+meta {
+  name: BFF refresh - Redis key missing (session expired)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{bffBaseUrl}}/auth/refresh
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: access_token={{loggedOutAccessToken}}
+}
+
+assert {
+  res.status: eq 401
+  res.body.code: eq bff-2004
+  res.body.data: isNull
+  res.body.traceId: isDefined
+}
