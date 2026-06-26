@@ -1,7 +1,7 @@
 ---
 id: TASK-AUTH-0006
 title: "Frontend auth infrastructure: Axios layer + login page + silent token refresh (T009-T011)"
-status: spec-ready
+status: dev-done
 priority: high
 assignee: ""
 created: 2026-06-26
