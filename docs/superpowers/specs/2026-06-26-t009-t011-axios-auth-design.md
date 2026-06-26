@@ -300,6 +300,10 @@ If the refresh endpoint itself returns 401, it short-circuits to logout immediat
 - [ ] AC-17: If `/auth/refresh` fails (401), auth state is cleared and user is redirected to `/login`.
 - [ ] AC-18: The refresh interceptor does not enter an infinite loop when `/auth/refresh` itself returns 401.
 - [ ] AC-19: Unauthenticated users (no `access_token` cookie) accessing internal routes are redirected to `/login` server-side via `middleware.ts` (Edge Runtime); page HTML is never sent. Public routes (`/login`) are whitelisted and not intercepted.
+- [ ] AC-20: On request error (timeout, 4xx, 5xx), the loading counter decrements correctly — overlay does not get stuck permanently.
+- [ ] AC-21: `useLoadingStore.decrement()` clamps to 0 — counter never goes negative (prevents overlay from being permanently broken).
+- [ ] AC-22: T011's internal call to `POST /auth/refresh` uses `{ silent: true }` — no loading overlay or toast is triggered during background token refresh.
+- [ ] AC-23: `logout()` calls `POST /auth/logout` (BFF clears Redis key + cookie), then `clearUser()`, then redirects to `/login`. If the API call fails, local state is still cleared and redirect still happens (fail-safe).
 
 ---
 

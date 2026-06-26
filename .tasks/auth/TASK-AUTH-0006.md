@@ -48,10 +48,12 @@ the user profile object in Zustand (persisted to `sessionStorage`).
 3. **T011** — 401 response interceptor: first 401 triggers `POST /auth/refresh`; all concurrent
    401s queue and replay after refresh succeeds; on refresh failure clear store and redirect to
    `/login`; infinite-loop guard on the refresh endpoint itself.
+4. **Logout** — `POST /auth/logout` via BFF (clears Redis refresh key + cookie); then clear
+   Zustand store and redirect to `/login`. Logout succeeds even if the API call fails (fail-safe).
 
 ### Out of Scope
 
-- Route-level auth guard (`middleware.ts`) — separate task.
+- Route-level auth guard (`middleware.ts`) — now included in this task.
 - GitHub OAuth / SSO login buttons (T014, T099).
 - Weak-network retry / timeout config (T087).
 - AppShell layout component (TASK-AUTH-0005).
@@ -109,6 +111,7 @@ src/
 | `points-mall-frontend/src/app/layout.tsx` | modify: wrap with AppProviders |
 | `points-mall-frontend/src/app/(auth)/login/page.tsx` | add |
 | `points-mall-frontend/src/middleware.ts` | add: Edge Runtime cookie check, public route whitelist |
+| `points-mall-frontend/src/lib/auth/logout.ts` | add: logout() helper — POST /auth/logout → clearUser → redirect |
 | `points-mall-frontend/.env.example` | add: NEXT_PUBLIC_BFF_URL |
 
 ## Acceptance Criteria
@@ -132,6 +135,10 @@ src/
 - [ ] AC-17: If `POST /auth/refresh` fails, auth state is cleared and user is redirected to `/login`.
 - [ ] AC-18: The refresh interceptor does not enter an infinite loop when `/auth/refresh` itself returns 401.
 - [ ] AC-19: 未登录用户（无 `access_token` cookie）访问内部路由，`middleware.ts` 服务端直接重定向到 `/login`，页面 HTML 不下发。`/login` 等公开路由不受拦截。
+- [ ] AC-20: 请求出错（网络超时、4xx、5xx）时，loading 计数器正确 -1，overlay 正常隐藏，不会永久卡住。
+- [ ] AC-21: `useLoadingStore.decrement()` 有下限保护，计数不会低于 0（防止 overlay 之后永久失效）。
+- [ ] AC-22: T011 内部调用 `POST /auth/refresh` 时带 `{ silent: true }`，不触发 loading overlay 和 toast。
+- [ ] AC-23: 调用 `logout()` 时：先调 `POST /auth/logout`（BFF 删除 Redis refresh key、清除 cookie），再 `clearUser()`，最后跳转 `/login`。即使接口调用失败，仍强制清除本地状态并跳转。
 
 ## Status Change History
 
