@@ -190,7 +190,8 @@ interface AuthState {
 ```
 
 Persisted to `sessionStorage` via Zustand `persist` middleware — survives page refresh,
-cleared on browser tab close.
+cleared on browser tab close. Note: if the cookie expires while the tab is open, the store
+may still show a user until the next API call returns 401 (handled by T011 → redirect to login).
 
 ### Login Form
 
@@ -282,7 +283,7 @@ If the refresh endpoint itself returns 401, it short-circuits to logout immediat
 - [ ] AC-04: HTTP network errors (4xx/5xx non-401) display a generic toast error.
 - [ ] AC-05: Successful responses return `data.data` directly (envelope unwrapped).
 - [ ] AC-06: `traceId` from error responses is logged to browser console.
-- [ ] AC-07: `NEXT_PUBLIC_BFF_URL` controls the base URL; missing env var causes a build-time warning.
+- [ ] AC-07: `NEXT_PUBLIC_BFF_URL` controls the base URL; undefined value causes all requests to fail with a network error (documented in `.env.example`).
 
 ### T010
 - [ ] AC-08: Submitting an invalid email shows inline validation error without making an API call.
