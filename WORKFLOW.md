@@ -1,7 +1,6 @@
 # AI-Driven Full-Stack Development Workflow v1.0
 
-> This document is the master workflow spec for the entire project.
-> All AI participants must read this document before starting any work.
+> This document is the AI's operating manual. For the human collaboration guide, see `HUMAN-GUIDE.md`.
 
 ---
 
@@ -100,56 +99,67 @@ fullstack-points-mall/
 
 ## AI Development Workflow
 
+> **Global rule:** Every time task status changes, append a record to the Status Change History
+> table in the task file. Steps that auto-update status (Step 9 script) are exempt — the script
+> handles it. All other status changes require a manual entry.
+
 ```
-Step 1   Receive raw requirements and development instructions
-         ↓
-Step 2   Read WORKFLOW.md (this file)
-         ↓
-Step 3   Create a task file in the matching domain subfolder under .tasks/
-          following the .tasks/_templates/task-template.md format
+Step 1   Create a task file in the matching domain subfolder under .tasks/
+          using .tasks/_templates/task-template.md as the starting point
           (e.g. .tasks/auth/TASK-AUTH-0001.md, .tasks/shop/TASK-SHOP-0001.md)
-          - id: auto-increment from the current highest sequence number in the domain
-          - status: draft
-          - Raw Requirements: fill in the actual requirements
-          - Spec section: leave blank, mark as "to be filled after Spec is generated"
+          - Fill only the fields marked "Step 1" in the template
+          - All other fields are filled progressively as the task advances through later steps
          ↓
-Step 4   Convert raw requirements into a Spec and draft Acceptance Criteria:
+Step 2   Convert raw requirements into a Spec and draft Acceptance Criteria:
           - Fill the [Spec] section in the task file with detailed technical decisions
           - Fill the [Acceptance Criteria] section with a numbered checklist derived from the Spec
             (AI-generated draft: cover happy path, error cases, edge cases, and security constraints)
           - Clarify any ambiguities with the human before proceeding
-          Update status to spec-pending
+          - status → spec-pending
          ↓
-Step 5   ⚠️ Wait for human to review and approve the Spec + Acceptance Criteria draft.
+Step 3   ⚠️ Wait for human to confirm the Spec + Acceptance Criteria.
           Human may edit individual AC items, add missing scenarios, or reject and request a rewrite.
-          Resume only after human explicitly confirms (e.g. replies "AC looks good" or updates status).
-          Update status to spec-ready
+          Once human explicitly confirms (e.g. "AC confirmed"), AI updates:
+          - status → spec-ready
          ↓
-Step 6   Implement code based on the [Spec] section,
-          update task status → in-dev, append status change history
+Step 4   Implement code based on the [Spec] section.
+          - status → in-dev
          ↓
-Step 7   Write test files item by item, following the [Acceptance Criteria] —
+Step 5   Write test files item by item, following the [Acceptance Criteria] —
           AI implements exactly what is listed in the acceptance criteria, no more, no less
           - Unit tests (*.test.ts): in __tests__/ under the same directory as the source file
           - API tests (*.bru): in the corresponding directory under .tests/api/bff/
           - E2E tests (*.spec.ts): under .tests/e2e/ (may be added after dev-done)
          ↓
-Step 8   Self-check against acceptance criteria item by item
-          (if wiki_refs is empty, check only against the task file's acceptance criteria)
+Step 6   Self-check against acceptance criteria item by item
+          - If wiki_refs is empty (new feature, no prior spec): check against AC only
+          - If wiki_refs is filled (implementing an existing wiki spec): also cross-check against
+            the referenced wiki file to catch any divergence from the canonical design
          ↓
-Step 9   Update the task file:
+Step 7   Update the task file:
+          - Fill all fields marked "Step 7" in the template (services, code_files, test_refs)
           - status → dev-done
-          - code_files → fill in all added/modified file paths
-          - test_refs → fill in corresponding test file paths
-          - Status change history → append a new record
          ↓
-Step 10  Run `pnpm run tasks:sync` to refresh `.tasks/_index.md`
+Step 8   Run `pnpm run tasks:sync` to refresh `.tasks/_index.md`
          ↓
-Step 11  Run `pnpm run test:task TASK-XXX --update-status`
+Step 9   Run `pnpm run test:task TASK-XXX --update-status`
           - All pass → status auto-updates to test-pass
-          - Any failure → status updates to test-fail, fix and retry from Step 6
+          - Any failure → status updates to test-fail, fix and retry from Step 4
          ↓
-Step 12  ⚠️ After deployment, human manually updates status to closed
+Step 10  Archive Spec to wiki before opening the PR:
+          - Append the task's [Spec] section to the corresponding `.wiki/features/<domain>.md`
+            (if the domain file already exists; otherwise create a new file)
+          - Fill in `wiki_refs` in the task file (e.g. `wiki_refs: [.wiki/features/auth.md]`)
+          - Increment the wiki file's version and append a row to its Change Log
+          - Keep the [Spec] section in the task file (it records original rationale — do not delete)
+          - Commit: `docs(TASK-XXX): archive spec to wiki`
+         ↓
+Step 11  ⚠️ Human closes after production verification:
+          - Deployed to target environment without errors
+          - E2E smoke test passes (or manual walkthrough confirms core flows work)
+          - status → closed
+          Note: closed is permanent. If a bug is found later, open a new task with
+          depends_on pointing to this one — do not reopen a closed task.
 ```
 
 ### Mid-Task Spec Amendment Process
@@ -174,13 +184,13 @@ AI updates the [Spec] section in the task file:
   - Add a ⚠️ amendment notice at the top of the Spec section with: date / what changed / why
     ↓
 Human reviews the updated Spec → confirms or rejects
-  ├─ Rejected → restore original Spec, resume from Step 6 with original Spec
+  ├─ Rejected → restore original Spec, resume from Step 4 with original Spec
   └─ Confirmed → AI re-implements based on updated Spec
     ↓
 AI appends a record to Status Change History:
   | <date> | in-dev | in-dev | Human | Spec amended: <summary of change> |
     ↓
-Continue from Step 6 with updated Spec as the source of truth
+Continue from Step 4 with updated Spec as the source of truth
 ```
 
 **Key rules:**
@@ -253,16 +263,10 @@ draft ──→ spec-pending ──→ spec-ready ──→ in-dev ──→ dev
 
 Sequence numbers start at `0001` and increment; IDs of deleted tasks must not be reused.
 
-### Task File Format
-
-Task files are filled in two phases — all fields are not required at once. For complete field definitions and examples see [`.tasks/_templates/task-template.md`](.tasks/_templates/task-template.md).
-
-- **Phase 1 (draft, at creation)**: fill in only required metadata; leave `Acceptance Criteria` blank until Spec is generated
-- **Phase 2 (dev-done, after development)**: complete `services`, `code_files`, `test_refs`, and check off all acceptance criteria
 
 ### Task Overview Index
 
-`.tasks/_index.md` is rebuilt by `pnpm run tasks:sync` and must not be edited directly by AI or humans. AI runs this command after every task status change (Step 10); the `test:task` script also calls it automatically upon completion.
+`.tasks/_index.md` is rebuilt by `pnpm run tasks:sync` and must not be edited directly by AI or humans. AI runs this command explicitly at Step 8 (after marking `dev-done`); the `test:task` script in Step 9 also calls it automatically when `--update-status` is used.
 
 ---
 
@@ -285,13 +289,9 @@ This is the core safety mechanism of the workflow — it ensures "code written b
 
 ### Three-Layer Consistency Check
 
-#### Level 1 — AI self-check when completing a task (required every time)
+#### Level 1 — AI self-check (Step 6 of the AI Development Workflow)
 
-Before updating task status to `dev-done`, AI must:
-
-1. Confirm implementation against each item in the task file's **Acceptance Criteria**, checking off each one (if `wiki_refs` is already filled in, also cross-reference the corresponding Spec file; if `wiki_refs` is empty, rely solely on the acceptance criteria)
-
-If any acceptance criterion is not met, the status must not be updated to `dev-done` — the reason must be noted in the task file.
+See Step 6 in the AI Development Workflow above.
 
 #### Level 2 — API compliance check script (optional, run before each commit)
 
@@ -317,24 +317,6 @@ When changes to the `.wiki/` directory are detected via `.git/hooks/post-commit`
 3. Automatically downgrade those tasks' status to `spec-ready` (preserving the previous status in history)
 4. Output the list of affected tasks and prompt AI to re-implement
 
-### Spec Change Standard Process
-
-```
-Human modifies Spec file
-    ↓
-Git commit → triggers Level 3 detection
-    ↓
-Affected tasks automatically downgraded to spec-ready
-    ↓
-AI reads changes, updates corresponding code
-    ↓
-AI updates task status to dev-done
-    ↓
-Run test:task to verify
-    ↓
-Pass → test-pass
-```
-
 ### AI Prohibited Actions
 
 Under no circumstances may AI perform the following:
@@ -359,9 +341,7 @@ Under no circumstances may AI perform the following:
 
 ### Unit Test Conventions (Vitest)
 
-- Test file lives alongside source file: `interceptors.ts` → `__tests__/interceptors.test.ts`
-- Each acceptance criterion must have at least one corresponding test case
-- Coverage scope: utility functions, data formatting, permission-check methods, basic rendering of shared components
+Each acceptance criterion must have at least one corresponding test case. Coverage scope: utility functions, data formatting, permission-check methods, basic rendering of shared components.
 
 ### API Integration Test Conventions (Bruno)
 
@@ -389,31 +369,6 @@ Each endpoint must cover at minimum: happy path + auth failure (401) + bad reque
 **AI responsibility**: For elements where the Spec defines a `data-testid`, the attribute must be added to the corresponding DOM node during implementation — it must not be omitted.
 
 ### Task Test Commands
-
-```bash
-# View status overview of all tasks
-pnpm run tasks:list
-
-# Filter tasks by status
-pnpm run tasks:list --status=dev-done
-pnpm run tasks:list --status=test-fail
-
-# View a single task's details
-pnpm run tasks:view TASK-AUTH-0001
-
-# Run all tests for a given task (view results only, no status update)
-pnpm run test:task TASK-AUTH-0001
-pnpm run test:task TASK-AUTH-0001 TASK-SHOP-0001     # multiple tasks
-
-# Run tests for all dev-done tasks (core command)
-pnpm run test:task --status=dev-done
-
-# Run tests and automatically update task status (recommended: pass→test-pass, fail→test-fail)
-pnpm run test:task --status=dev-done --update-status
-
-# Check API code vs. Spec consistency
-pnpm run check:spec-api
-```
 
 `test:task` script execution logic:
 
@@ -485,48 +440,6 @@ jobs:
 
 ---
 
-## Additional Notes (Extensions Beyond Original Requirements)
-
-The following conventions were proactively added to the workflow. They go beyond the original 4 requirements but are critical for AI-driven development:
-
-### About the Spec Section
-
-When a task enters `spec-pending` status, you may use any AI tool (Copilot, Cursor, etc.) to generate the Spec and **paste it directly into the task file's [Spec] section** — it is version-tracked along with the task file.
-
-After human review, extract the acceptance criteria (core items) into the task file's [Acceptance Criteria] section and update status to `spec-ready`. Development may then begin.
-
-Before submitting or merging the PR, the developer archives the [Spec] section contents to the corresponding file in `.wiki/features/`, fills in `wiki_refs`, and **retains the [Spec] section in the task file as a historical record of the analysis and design process**. The Spec section serves a different purpose from the wiki: the wiki holds the current canonical spec; the task file's Spec holds the original requirements analysis, decision rationale, and out-of-scope boundaries. Tools may change; this process does not.
-
-### About AI-Friendly Design
-
-- All Spec and task files use YAML frontmatter to provide machine-readable metadata that AI can parse directly
-- `_index.md` provides a global task map — AI can quickly understand overall project progress before starting work
-- Task files include `code_files` and `test_refs` so AI can locate related files without searching
-- Files are named semantically (e.g. `auth.md`, `bff-api.yaml`), reducing AI lookup overhead
-
-### About "Spec Before Code" Engineering Guarantees
-
-- `.wiki/api/bff-api.yaml` is the single source of truth for BFF interfaces; the frontend relies on it directly to generate API client types
-- The `version` field in Spec files enforces version management — every business change must increment the version
-- The `Change Log` table requires recording the reason for each change, providing context for future AI decision tracing
-
-### About UI Test Feasibility
-
-Playwright fully supports UI-level automation testing. This project is planned to cover the following UI test scenarios:
-
-| Scenario | Test Type | Tool |
-|----------|-----------|------|
-| Login form submission | Form interaction | Playwright |
-| Permission-based route interception | Route redirect assertion | Playwright |
-| Full points redemption flow | Multi-step business flow | Playwright |
-| Button hidden due to lack of permission | DOM visibility assertion | Playwright |
-| Page does not crash when API falls back | Exception scenario | Playwright + MSW |
-| Dynamic menu rendering based on permissions | API mock + render assertion | Playwright |
-
-Therefore, the command "run test cases for tasks in dev-done status" covers both API tests (Bruno) and UI tests (Playwright), all dispatched uniformly via the `test:task` script.
-
----
-
 ## Team Collaboration Constraints
 
 This section describes hard constraints that apply to **all team members** (including AI). They are enforced via native GitHub features and **cannot be bypassed**.
@@ -540,14 +453,6 @@ This section describes hard constraints that apply to **all team members** (incl
 | 3 | GitHub Branch Protection | ❌ No | Direct push prohibited, must go through PR |
 | 4 | CODEOWNERS + Required Review | ❌ No | Spec/core file changes require designated approver |
 | 5 | Required CI Checks | ❌ No | Cannot merge if tests fail |
-
-### CODEOWNERS Rules (`.github/CODEOWNERS`)
-
-For file contents see [.github/CODEOWNERS](.github/CODEOWNERS).
-
-**Trigger mechanism**: When a PR is created, GitHub automatically scans changed files, matches CODEOWNERS rules, and **automatically** adds the responsible parties as Reviewers. The PR author does not need to select reviewers manually, and this applies regardless of how the PR was created (web UI, CLI, or AI).
-
-**Note**: Designated owners in CODEOWNERS cannot review their own PRs — a backup approver should be configured (see file comments).
 
 ### Branch Protection Configuration (must be enabled manually in GitHub Settings)
 
@@ -576,33 +481,5 @@ Branch name pattern: dev
   Required checks: (same as above)
 ```
 
-### PR Template (`.github/pull_request_template.md`)
-
-For file contents see [.github/pull_request_template.md](.github/pull_request_template.md).
-
-Every PR is pre-filled with this template when created, **requiring a linked TASK ID**. PRs without a TASK ID should be rejected by the reviewer.
-
-### Team Process for Spec Changes
-
-Spec changes are the highest-risk operations. The process is:
-
-```
-Requirement change
-    ↓
-Open a dedicated spec-change branch (do not mix with business code)
-    ↓
-Modify only the relevant file(s) in .wiki/, increment version, append to Change Log
-    ↓
-Open PR → CODEOWNERS auto-requests tech-lead review
-    ↓
-tech-lead reviews and confirms changes → approves → merges
-    ↓
-CI spec-consistency job triggers:
-  Scans affected .tasks/**/*.md
-  Auto-downgrades associated tasks to spec-ready
-  Appends status change history to each task file
-    ↓
-Affected tasks' assignees are notified and must re-implement
-```
-
 **Spec PRs and business-code PRs must be submitted separately** to prevent reviewers from overlooking Spec changes in a large PR.
+

@@ -86,7 +86,7 @@
 
 - [ ] **T100** 🟡 `[frontend-base]` AppShell layout component: collapsible left Sidebar (240 px expanded / 64 px icon-only with tooltip, `localStorage` persists state), top Header (logo + product title on left; avatar dropdown with profile/logout + notification bell on right), auto-computed Breadcrumb from `menuItems[]` + current `pathname`. All data (menuItems, user, notificationCount, callbacks) are injected as props — the component makes no API calls. Hardcoded default styles (dark sidebar `#001529`, white header); consumers override via semantic CSS classes (`.pm-sidebar`, `.pm-header`). Zero runtime dependencies beyond React; styles use CSS Modules bundled by Rollup.
 
-- [ ] **T009** 🟡 `[frontend]` Axios infrastructure: configure base URL, request interceptor (inject `Authorization: Bearer <token>`, timestamp header), response interceptor (unwrap `{ code, data, message }` envelope, map error codes to toast messages). Cookie helper reads non-HttpOnly user-info cookies (e.g. `user_id`, `role`); `access_token` is HttpOnly and carried automatically by the browser.
+- [ ] **T009** 🟡 `[frontend]` Axios infrastructure + global loading/toast layer: shared Axios instance with auth token injection and unified response/error handling; global fullscreen loading overlay while any request is in-flight, with per-request opt-out for silent background calls; global toast notifications on API errors; zero per-page setup.
 
 - [ ] **T010** 🟡 `[frontend]` Login page: email + password form with React Hook Form + Zod validation; call BFF login API via Axios instance from T009 (depends on T009); `access_token` is set automatically via BFF `Set-Cookie` — no manual token storage needed; store user info in `useAuthStore` (Zustand). Redirect to dashboard on success.
 
