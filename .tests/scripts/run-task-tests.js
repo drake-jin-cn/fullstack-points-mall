@@ -112,11 +112,24 @@ function classifyTestRef(ref) {
 
 function runVitest(testFiles) {
   console.log('\n🧪  Running Vitest unit tests...');
-  const result = spawnSync(
-    'npx', ['vitest', 'run', ...testFiles],
-    { stdio: 'inherit', cwd: ROOT }
-  );
-  return result.status === 0;
+  // Group by service dir so each frontend/backend runs with its own vitest.config
+  const byDir = {};
+  for (const f of testFiles) {
+    const dir = detectServiceDir(f);
+    if (!byDir[dir]) byDir[dir] = [];
+    byDir[dir].push(path.relative(dir, path.join(ROOT, f)));
+  }
+  let allPass = true;
+  for (const [dir, files] of Object.entries(byDir)) {
+    const vitestBin = path.join(dir, 'node_modules', '.bin', 'vitest');
+    const bin = fs.existsSync(vitestBin) ? vitestBin : 'npx vitest';
+    const result = spawnSync(
+      bin, ['run', ...files],
+      { stdio: 'inherit', cwd: dir, shell: !fs.existsSync(vitestBin) }
+    );
+    if (result.status !== 0) allPass = false;
+  }
+  return allPass;
 }
 
 function runJest(testFiles) {

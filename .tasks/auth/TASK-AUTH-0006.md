@@ -1,7 +1,7 @@
 ---
 id: TASK-AUTH-0006
 title: "Frontend auth infrastructure: Axios layer + login page + silent token refresh (T009-T011)"
-status: dev-done
+status: test-pass
 priority: high
 assignee: ""
 created: 2026-06-26
@@ -10,8 +10,26 @@ depends_on:
   - TASK-AUTH-0003
 services:
   - frontend
-code_files: []
-test_refs: []
+code_files:
+  - points-mall-frontend/src/lib/http/instance.ts
+  - points-mall-frontend/src/lib/http/index.ts
+  - points-mall-frontend/src/lib/http/types.ts
+  - points-mall-frontend/src/lib/http/interceptors/loading.ts
+  - points-mall-frontend/src/lib/http/interceptors/error.ts
+  - points-mall-frontend/src/lib/http/interceptors/auth.ts
+  - points-mall-frontend/src/lib/auth/logout.ts
+  - points-mall-frontend/src/store/useLoadingStore.ts
+  - points-mall-frontend/src/store/useAuthStore.ts
+  - points-mall-frontend/src/components/LoadingOverlay.tsx
+  - points-mall-frontend/src/components/AppProviders.tsx
+  - points-mall-frontend/src/app/(auth)/login/page.tsx
+  - points-mall-frontend/src/middleware.ts
+test_refs:
+  - points-mall-frontend/src/__tests__/store/useLoadingStore.test.ts
+  - points-mall-frontend/src/__tests__/store/useAuthStore.test.ts
+  - points-mall-frontend/src/__tests__/lib/http/interceptors/loading.test.ts
+  - points-mall-frontend/src/__tests__/lib/http/interceptors/error.test.ts
+  - points-mall-frontend/src/__tests__/lib/http/interceptors/auth.test.ts
 wiki_refs:
   - .wiki/features/auth.md
 ---
@@ -144,5 +162,7 @@ src/
 
 | Time | Previous Status | New Status | Actor | Notes |
 |------|-----------------|------------|-------|-------|
+| 2026-06-26 | test-fail | test-pass | script | test:task run |
+| 2026-06-26 | dev-done | test-fail | script | test:task run - Vitest failed |
 | 2026-06-26 | — | spec-pending | AI | Task created from T009+T010+T011 raw requirements; full design in docs/superpowers/specs/2026-06-26-t009-t011-axios-auth-design.md |
 | 2026-06-26 | spec-pending | spec-ready | Human | AC confirmed (23 items) |

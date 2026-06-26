@@ -300,7 +300,7 @@ Library: `io.jsonwebtoken:jjwt-api` 0.12.x
 | 1.1 | 2026-06-26 | AI | Added T007: JWT issuance, HttpOnly cookie, Redis refresh key, global AuthGuard (TASK-AUTH-0002) |
 | 1.2 | 2026-06-26 | AI | Added T008: refresh/logout endpoints, bff-2003/bff-2004 error codes (TASK-AUTH-0003) |
 | 1.3 | 2026-06-26 | AI | Added T015: JWT middleware for shop/message/data/tpc, defense-in-depth design (TASK-AUTH-0004) |
-| 1.4 | 2026-06-26 | AI | Added T100: AppShell layout component in frontend-base (TASK-AUTH-0005) |
+| 1.5 | 2026-06-26 | AI | Added T009-T011: Frontend HTTP layer, login page, token refresh interceptor, middleware route guard (TASK-AUTH-0006) |
 
 ---
 
@@ -381,3 +381,90 @@ interface MenuItem {
 | `.pm-header` | Header `<header>` |
 | `.pm-content` | Main content `<div>` |
 | `.pm-breadcrumb` | Breadcrumb `<nav>` |
+
+---
+
+## 9. Frontend HTTP Infrastructure + Login + Token Refresh (T009-T011 — TASK-AUTH-0006)
+
+> Related task: TASK-AUTH-0006 · Full design: `docs/superpowers/specs/2026-06-26-t009-t011-axios-auth-design.md`
+
+### Background
+
+The frontend is a Next.js 16 (React 19) app. T009–T011 establish the foundational HTTP layer,
+authentication UI, and token lifecycle management that all subsequent frontend features depend on.
+
+The BFF issues `access_token` as an `HttpOnly; Secure; SameSite=Strict` cookie. The browser
+stores and sends it automatically — the frontend never touches the raw JWT. Frontend only stores
+the user profile object in Zustand (persisted to `sessionStorage`).
+
+### Goals
+
+1. **T009** — Shared Axios instance (`withCredentials: true`); global fullscreen loading overlay
+   driven by a request counter; Sonner toast on API errors; per-request `{ silent: true }` opt-out;
+   BFF response envelope (`{ code, message, data, traceId? }`) transparently unwrapped.
+2. **T010** — Login page (full-screen dark gradient + frosted glass card); React Hook Form + Zod
+   validation; on success store user in `useAuthStore` and redirect to `/dashboard`.
+3. **T011** — 401 response interceptor: first 401 triggers `POST /auth/refresh`; all concurrent
+   401s queue and replay after refresh succeeds; on refresh failure clear store and redirect to
+   `/login`; infinite-loop guard on the refresh endpoint itself.
+4. **Logout** — `POST /auth/logout` via BFF (clears Redis refresh key + cookie); then clear
+   Zustand store and redirect to `/login`. Logout succeeds even if the API call fails (fail-safe).
+5. **Route Guard** — `middleware.ts` (Edge Runtime): checks cookie existence; unauthenticated
+   requests to private routes are redirected to `/login` before HTML is served.
+
+### Technical Design
+
+**UI stack additions:**
+
+| Library | Purpose |
+|---------|---------|
+| `shadcn/ui` | Component primitives (Tailwind-native) |
+| `sonner` | Toast notifications |
+| `zustand` | Client state management |
+| `axios` | HTTP client |
+| `react-hook-form` + `zod` | Form validation |
+
+**Key architectural decisions:**
+
+- Loading uses a **counter** (not boolean) — concurrent requests don't hide overlay prematurely.
+- Counter is clamped to `Math.max(0, count - 1)` — prevents permanent overlay lock.
+- `silent: true` on AxiosRequestConfig skips loading + toast (background polling, token refresh).
+- Cookie method means **no token injection on retry** — browser auto-sends updated cookie.
+- `isRefreshing` + `queue[]` closure-scoped per instance — prevents duplicate refresh calls.
+- `middleware.ts` uses Edge Runtime: can only check cookie **existence**, not JWT validity.
+- Logout is fail-safe: API failure still clears local state + redirects.
+
+**File structure:**
+
+```
+src/
+├── lib/http/
+│   ├── instance.ts              # axios.create({ withCredentials: true })
+│   ├── interceptors/
+│   │   ├── loading.ts           # counter-based overlay control
+│   │   ├── error.ts             # envelope unwrap + toast
+│   │   └── auth.ts              # 401 → refresh → queue replay
+│   └── index.ts                 # compose + export http singleton
+├── lib/auth/
+│   └── logout.ts                # fail-safe logout helper
+├── store/
+│   ├── useAuthStore.ts          # { user, setUser, clearUser } + sessionStorage persist
+│   └── useLoadingStore.ts       # { count, isLoading, increment, decrement }
+├── components/
+│   ├── AppProviders.tsx         # <LoadingOverlay> + <Toaster>
+│   └── LoadingOverlay.tsx       # fullscreen backdrop + spinner
+├── middleware.ts                # Edge Runtime cookie check, public route whitelist
+└── app/
+    ├── layout.tsx               # wrap with <AppProviders>
+    └── (auth)/login/page.tsx   # login page
+```
+
+### BFF Response Envelope
+
+```ts
+// Success: { code: "OK", message: "success", data: T }
+// Error:   { code: "bff-2001", message: "...", data: null, traceId: "uuid" }
+```
+
+The error interceptor unwraps success responses (callers receive `data` directly) and
+rejects business errors with the full body (so `code` and `message` are accessible to catch blocks).
