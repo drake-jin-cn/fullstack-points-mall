@@ -1,0 +1,21 @@
+meta {
+  name: BFF login - missing fields
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{bffBaseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "admin@pointsmall.com"
+  }
+}
+
+assert {
+  res.status: eq 400
+}

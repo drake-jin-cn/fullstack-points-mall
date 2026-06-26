@@ -34,7 +34,7 @@ and static fallback data when an API call fails — to prevent blank page crashe
 > After human review, extract acceptance criteria into the [Acceptance Criteria] section below
 > and set status to `spec-ready`.
 > Before merging the PR, archive this section to the corresponding file in `.wiki/features/`,
-> fill in `wiki_refs`, and **delete this section**.
+> fill in `wiki_refs`
 
 ### Background
 

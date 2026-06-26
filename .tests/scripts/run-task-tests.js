@@ -105,6 +105,8 @@ function classifyTestRef(ref) {
   if (ref.includes('.spec.ts') && ref.includes('e2e')) return 'playwright';
   if (ref.endsWith('.bru')) return 'bruno';
   if (ref.endsWith('.test.ts') || ref.endsWith('.test.js')) return 'vitest';
+  // NestJS convention: *.spec.ts (non-e2e) are Jest tests
+  if (ref.endsWith('.spec.ts')) return 'jest';
   return 'unknown';
 }
 
@@ -115,6 +117,28 @@ function runVitest(testFiles) {
     { stdio: 'inherit', cwd: ROOT }
   );
   return result.status === 0;
+}
+
+function runJest(testFiles) {
+  console.log('\n🧪  Running Jest unit tests...');
+  // Detect which service directory owns the first test file, run jest from there
+  const serviceDir = detectServiceDir(testFiles[0]);
+  const relFiles = testFiles.map(f => path.relative(serviceDir, path.join(ROOT, f)));
+  const result = spawnSync(
+    'npx', ['jest', '--no-coverage', ...relFiles],
+    { stdio: 'inherit', cwd: serviceDir, env: { ...process.env, NODE_ENV: 'test' } }
+  );
+  return result.status === 0;
+}
+
+function detectServiceDir(ref) {
+  // e.g. "points-mall-bff/src/auth/__tests__/foo.spec.ts" → "<ROOT>/points-mall-bff"
+  const parts = ref.split('/');
+  if (parts.length > 1) {
+    const candidate = path.join(ROOT, parts[0]);
+    if (fs.existsSync(path.join(candidate, 'package.json'))) return candidate;
+  }
+  return ROOT;
 }
 
 function runBruno(bruFiles) {
@@ -272,6 +296,7 @@ for (const task of tasks) {
   }
 
   const vitestFiles = testRefs.filter(r => classifyTestRef(r) === 'vitest');
+  const jestFiles = testRefs.filter(r => classifyTestRef(r) === 'jest');
   const brunoFiles = testRefs.filter(r => classifyTestRef(r) === 'bruno');
   const playwrightFiles = testRefs.filter(r => classifyTestRef(r) === 'playwright');
 
@@ -281,6 +306,10 @@ for (const task of tasks) {
   if (vitestFiles.length > 0 && !runVitest(vitestFiles)) {
     passed = false;
     failSummary += 'Vitest failed ';
+  }
+  if (jestFiles.length > 0 && !runJest(jestFiles)) {
+    passed = false;
+    failSummary += 'Jest failed ';
   }
   if (brunoFiles.length > 0 && !runBruno(brunoFiles)) {
     passed = false;
