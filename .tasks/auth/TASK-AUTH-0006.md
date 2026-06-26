@@ -1,7 +1,7 @@
 ---
 id: TASK-AUTH-0006
 title: "Frontend auth infrastructure: Axios layer + login page + silent token refresh (T009-T011)"
-status: spec-pending
+status: spec-ready
 priority: high
 assignee: ""
 created: 2026-06-26
@@ -145,3 +145,4 @@ src/
 | Time | Previous Status | New Status | Actor | Notes |
 |------|-----------------|------------|-------|-------|
 | 2026-06-26 | — | spec-pending | AI | Task created from T009+T010+T011 raw requirements; full design in docs/superpowers/specs/2026-06-26-t009-t011-axios-auth-design.md |
+| 2026-06-26 | spec-pending | spec-ready | Human | AC confirmed (23 items) |
