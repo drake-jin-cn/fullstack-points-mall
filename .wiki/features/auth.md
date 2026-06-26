@@ -1,7 +1,7 @@
 # Auth Feature Spec
 
 > **Status:** active  
-> **Related tasks:** TASK-AUTH-0001, TASK-AUTH-0002, TASK-AUTH-0003, TASK-AUTH-0004  
+> **Related tasks:** TASK-AUTH-0001, TASK-AUTH-0002, TASK-AUTH-0003, TASK-AUTH-0004, TASK-AUTH-0005  
 > **Last updated:** 2026-06-26
 
 ---
@@ -300,3 +300,84 @@ Library: `io.jsonwebtoken:jjwt-api` 0.12.x
 | 1.1 | 2026-06-26 | AI | Added T007: JWT issuance, HttpOnly cookie, Redis refresh key, global AuthGuard (TASK-AUTH-0002) |
 | 1.2 | 2026-06-26 | AI | Added T008: refresh/logout endpoints, bff-2003/bff-2004 error codes (TASK-AUTH-0003) |
 | 1.3 | 2026-06-26 | AI | Added T015: JWT middleware for shop/message/data/tpc, defense-in-depth design (TASK-AUTH-0004) |
+| 1.4 | 2026-06-26 | AI | Added T100: AppShell layout component in frontend-base (TASK-AUTH-0005) |
+
+---
+
+## 6. AppShell Layout Component (`@points-mall/frontend-base`)
+
+> Related task: TASK-AUTH-0005 · Full design: `docs/superpowers/specs/2026-06-26-frontend-base-appshell-design.md`
+
+### Background
+
+`frontend-base` is a shared npm package (`@points-mall/frontend-base`) consumed by multiple teams.
+HTTP infrastructure (T009, T011) was scoped out — each team has its own BFF conventions. The
+genuinely reusable piece is the **application shell**: every team needs the same navigation frame.
+
+### Goals
+
+1. `AppShell` component with collapsible Sidebar, fixed Header, auto-computed Breadcrumb.
+2. 100% props-driven — no API calls inside the component.
+3. Sidebar: 240 px expanded / 64 px collapsed, 300 ms CSS transition, state persisted in `localStorage`.
+4. Header: logo + title (left), notification bell with badge + user avatar dropdown (right).
+5. Breadcrumb: auto-computed by walking `menuItems` tree against current pathname.
+6. Hardcoded default dark-sidebar style (`#001529`); consumers override via `.pm-sidebar` / `.pm-header` CSS classes.
+7. Zero runtime deps beyond React; CSS Modules bundled inline by `rollup-plugin-postcss`.
+
+### Out of Scope
+
+- Axios / HTTP client (each consuming app owns this).
+- Silent token refresh (each consuming app owns this).
+- User profile page content.
+- i18n / theme switching.
+
+### Component API
+
+```ts
+interface AppShellProps {
+  title: string
+  logo?: React.ReactNode
+  menuItems: MenuItem[]
+  user: { name: string; avatar?: string }
+  notificationCount?: number
+  onNotificationClick?: () => void
+  onProfileClick?: () => void
+  onLogout: () => void
+  collapsed?: boolean                    // controlled mode
+  onCollapsedChange?: (v: boolean) => void
+  currentPath?: string                   // defaults to window.location.pathname
+  children: React.ReactNode
+}
+
+interface MenuItem {
+  key: string
+  label: string
+  icon?: React.ReactNode
+  path?: string
+  children?: MenuItem[]                  // nested menus supported
+}
+```
+
+### Layout Structure
+
+```
+┌──────────────────────────────────────────────┐
+│  Header (sticky top, z-index 10)              │
+│  [Breadcrumb]            [Bell] [Avatar▾]     │
+├────────────┬─────────────────────────────────┤
+│            │                                 │
+│  Sidebar   │   <children /> (pm-content)     │
+│ 240/64px   │   padding: 24px                 │
+│ dark navy  │                                 │
+└────────────┴─────────────────────────────────┘
+```
+
+### CSS Override Classes
+
+| Class | Element |
+|-------|---------|
+| `.pm-shell` | Root wrapper |
+| `.pm-sidebar` | Sidebar `<aside>` |
+| `.pm-header` | Header `<header>` |
+| `.pm-content` | Main content `<div>` |
+| `.pm-breadcrumb` | Breadcrumb `<nav>` |

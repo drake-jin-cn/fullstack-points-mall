@@ -84,11 +84,13 @@
 
 - [x] **T008** 🟡 `[bff]` Token refresh endpoint: `POST /auth/refresh` — validates refresh token by checking Redis key `refresh:{userId}` exists (server-side validity, not just signature); issues new access token via `Set-Cookie`. Invalidation endpoint: `POST /auth/logout` — DEL `refresh:{userId}` from Redis, clear access token cookie. Silent refresh logic: if access token cookie is expired but Redis refresh key is valid, auto-renew.
 
-- [ ] **T009** 🟡 `[frontend-base]` Axios infrastructure: configure base URL, request interceptor (inject `Authorization: Bearer <token>`, timestamp header), response interceptor (unwrap `{ code, data, message }` envelope, map error codes to toast messages). HttpOnly Cookie read for token storage helper.
+- [ ] **T100** 🟡 `[frontend-base]` AppShell layout component: collapsible left Sidebar (240 px expanded / 64 px icon-only with tooltip, `localStorage` persists state), top Header (logo + product title on left; avatar dropdown with profile/logout + notification bell on right), auto-computed Breadcrumb from `menuItems[]` + current `pathname`. All data (menuItems, user, notificationCount, callbacks) are injected as props — the component makes no API calls. Hardcoded default styles (dark sidebar `#001529`, white header); consumers override via semantic CSS classes (`.pm-sidebar`, `.pm-header`). Zero runtime dependencies beyond React; styles use CSS Modules bundled by Rollup.
+
+- [ ] **T009** 🟡 `[frontend]` Axios infrastructure: configure base URL, request interceptor (inject `Authorization: Bearer <token>`, timestamp header), response interceptor (unwrap `{ code, data, message }` envelope, map error codes to toast messages). Cookie helper reads non-HttpOnly user-info cookies (e.g. `user_id`, `role`); `access_token` is HttpOnly and carried automatically by the browser.
 
 - [ ] **T010** 🟡 `[frontend]` Login page: email + password form with React Hook Form + Zod validation; call BFF login API via Axios instance from T009 (depends on T009); `access_token` is set automatically via BFF `Set-Cookie` — no manual token storage needed; store user info in `useAuthStore` (Zustand). Redirect to dashboard on success.
 
-- [ ] **T011** 🟡 `[frontend-base]` Silent token refresh interceptor: on 401 response, pause the failed request queue, call `/auth/refresh`, then replay all queued requests with the new token. If refresh also fails, clear auth state and redirect to login.
+- [ ] **T011** 🟡 `[frontend]` Silent token refresh interceptor: on 401 response, pause the failed request queue, call `/auth/refresh`, then replay all queued requests with the new token. If refresh also fails, clear auth state and redirect to login.
 
 - [ ] **T012** 🟡 `[thirdparty]` GitHub OAuth module: `GET /oauth/github/url` returns authorization URL with correct scopes; `GET /oauth/github/callback` exchanges code for access token, fetches user profile from GitHub API, returns normalized `{ githubId, email, name, avatar }`.
 
